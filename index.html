@@ -71,7 +71,8 @@
                     <div x-show="c.results?.medalType == 'ME_SILVER'" class="inline-block text-center w-5 h-5 bg-gray-300 text-black text-sm font-bold rounded-full">A</div>
                     <div x-show="c.results?.medalType == 'ME_BRONZE'" class="inline-block text-center w-5 h-5 bg-yellow-700 text-black text-sm font-bold rounded-full">B</div>
                   </div>
-                  <div class="w-6 text-right opacity-80" x-text="`${i + 1}`"></div>
+                  <div class="w-6 text-right opacity-80" x-show="c.results?.position" x-text="`${c.results.position}`"></div>
+                  <div class="w-6 text-right opacity-80" x-show="!c.results?.position" x-text="`-`"></div>
                   <img class="inline-block w-5 select-none" :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${c.noc}.png`" />
                   <div class="w-7 text-center select-none opacity-70 cursor-default text-sm" x-text="c.noc" x-bind:title="getNocLabel(c.noc)"></div>
                   <span x-text="c.name" class="cursor-pointer select-all" @click="copyName(c.name)" :class="{'font-bold': c.results?.winnerLoserTie == 'W'}"></span>
@@ -107,7 +108,7 @@
       </div>
     </div>
   </div>
-  <div class="p-2 text-neutral-400 text-center text-xs">by <a href="https://github.com/boherm" target="_blank" class="underline font-bold">boherm</a> - version 2.1.0</div>
+  <div class="p-2 text-neutral-400 text-center text-xs">by <a href="https://github.com/boherm" target="_blank" class="underline font-bold">boherm</a> - version 2.1.1</div>
 </div>
 
 <script>
@@ -542,6 +543,18 @@
             const competitors = data.competitors ?? [];
 
             const hasMedals = competitors.filter(c => ['ME_GOLD', 'ME_SILVER', 'ME_BRONZE'].includes(c.results?.medalType)).length > 0;
+
+            competitors.sort((a, b) => {
+              if (b.results?.winnerLoserTie === "W" && a.results?.winnerLoserTie === "L") return 1;
+
+              const posA = a.results?.position;
+              const posB = b.results?.position;
+              if (posA == null && posB == null) return 0;
+              if (posA == null) return 1;
+              if (posB == null) return -1;
+
+              return posA - posB;
+            });
 
             const eventData = {
               'id': data.id,
