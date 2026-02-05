@@ -1,142 +1,540 @@
 <html class="scroll-smooth">
+
 <head>
   <title>JO 2026</title>
   <meta charset="utf-8">
-  <meta name="description" content="Suivez en direct le planning des compétitions des Jeux Olympiques et Paralympiques d’hiver !">
+  <meta name="description"
+    content="Suivez en direct le planning des compétitions des Jeux Olympiques et Paralympiques d’hiver !">
   <link rel="icon" href="https://gstatic.olympics.com/s3/mc2026/favicon/favicon-194x194.png" sizes="194x194">
-  <meta name="viewport" content="width=device-width,initial-scale=0.8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine -->
+  <script src="https://unpkg.com/alpinejs" defer></script>
+
   <style>
-    [x-cloak] { display: none !important; }
-    .app .alert-end {
-      pointer-events: none;
+    /* Base Setup */
+    :root {
+      --font-inter: 'Inter', sans-serif;
     }
+
+    body {
+      font-family: var(--font-inter);
+      background-color: #09090b;
+      /* Zinc 950 */
+      background-image:
+        radial-gradient(ellipse at top right, rgba(120, 113, 108, 0.15), transparent 50%),
+        radial-gradient(ellipse at bottom left, rgba(63, 63, 70, 0.15), transparent 50%);
+      background-attachment: fixed;
+      color: #fafafa;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    [x-cloak] {
+      display: none !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Utilities */
+    .glass-panel {
+      background: rgba(24, 24, 27, 0.6);
+      /* Zinc 900 / 60% */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .glass-card {
+      background: rgba(39, 39, 42, 0.4);
+      /* Zinc 800 / 40% */
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      background: rgba(39, 39, 42, 0.6);
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Animations */
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-enter {
+      animation: slideUpFade 0.4s ease-out forwards;
+    }
+
+    /* Alerts */
+    .alert-end {
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease-in-out, opacity 0.3s;
+    }
+
     .app:has(article.is-flashing) .alert-end {
       opacity: 1;
       pointer-events: auto;
+      transform: translateY(0);
     }
   </style>
 </head>
-<body class="bg-black text-white">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/alpinejs" defer></script>
 
-<div x-data="app" x-init="init()" x-on:scrollend.document.debounce.250ms="scrollEnd()" @keyup.shift.A.window="goToFinished()" @keyup.shift.C.window="goToTime()" @keyup.enter.window="enter" class="app flex flex-col gap-2 p-2">
-  <div class="text-center p-2 text-sm select-none flex gap-2 justify-between items-center">
-    <div class="font-bold">JO 2026</div>
-    <div>Planning du <span x-text="currentDate"></span></div>
-    <button @click.prevent="toggleAboutModal()" class="text-sm px-2 py-1 bg-neutral-700 rounded">À propos</button>
-  </div>
-  <div @click="goToFinished()" class="alert-end fixed z-10 top-0 left-0 w-full p-3 text-center text-sm italic bg-red-500 opacity-0 transition-all cursor-pointer select-none animate-bounce hover:animate-none">!! Alerte fin d'épreuve !!</div>
-  <template x-for="event in events">
-    <article x-bind:data-id="event.id" class="relative group w-full p-2 pt-1 border-t-4 border-t-transparent" :class="{ 'odd:bg-gray-900 even:bg-gray-900/80': event.medalFlag == 0, 'bg-gray-700': event.medalFlag >= 1, '!border-t-red-500': event.topBorder, 'is-highlight': event.topBorder, 'is-flashing': isHighlight(event), '!bg-orange-900 opacity-60': event.status == 'CANCELLED' }">
-      <div class="absolute z-1 top-0 left-0 right-0 bottom-0" :class="{ 'bg-red-600 animate-pulse group-hover:bg-red-600/60 transition-all group-hover:animate-none': isHighlight(event) }"></div>
-      <div class="relative z-2 select-none flex items-center justify-between">
-        <div class="flex pl-8 flex-auto items-center cursor-pointer gap-5 justify-between" @click="if(event.competitors.length > 0) competitorsExpandToggle(event)"
-             x-on:contextmenu="$event.preventDefault();setTopBorder(event)">
-          <span class="grow-0 text-white/60" x-text="event.startAt"></span>
-          <div class="grow truncate">
-            <div class="font-bold text-sm truncate" x-text="event.sportName"></div>
-            <div class="text-sm truncate" x-text="event.eventName"></div>
+<body class="min-h-screen selection:bg-indigo-500/30 selection:text-indigo-200">
+
+  <div x-data="app" x-init="init()" x-on:scrollend.document.debounce.250ms="scrollEnd()"
+    @keyup.shift.A.window="goToFinished()" @keyup.shift.C.window="goToTime()" @keyup.enter.window="enter"
+    class="app relative pb-20">
+
+    <!-- Sticky Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b-0 border-white/10">
+      <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+
+        <!-- Logo / Title -->
+        <div class="flex items-center gap-3">
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+            JO
           </div>
-          <div class="grow-0 flex gap-4 items-center">
-          <img x-show="event.hasFR" class="inline-block w-5 select-none" src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png" />
-          <a @click.stop x-show="event.detailUrl" x-bind:href="event.detailUrl" x-bind:target="'_blank'" class="opacity-50 select-none">&#128279;</a>
+          <div class="leading-tight">
+            <div class="font-bold text-sm tracking-wide text-white">MILANO CORTINA 2026</div>
+            <!-- Date Navigation -->
+            <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 select-none">
+              <button @click="changeDate(-1)" :disabled="isDateMin"
+                class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <span x-text="currentDateDisplay" class="text-indigo-400 min-w-[80px] text-center"></span>
+              <button @click="changeDate(1)" :disabled="isDateMax"
+                class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="grow-0 absolute left-1 w-4">
-           <div x-show="event.status == 'RUNNING'" title="En cours" class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
-           <div x-show="event.status == 'CANCELLED'" title="Annulé" class="w-4 h-4 rounded-full bg-black"></div>
-           <div x-show="event.status == 'RESCHEDULED'" title="Reprogrammé" class="w-4 h-4 rounded-full bg-black"></div>
-           <div x-show="event.status == 'SCHEDULED_BREAK'" title="En Pause" class="w-4 h-4 rounded-full bg-transparent border-[3px] border-orange-500"></div>
-           <div x-show="event.status == 'FINISHED'" title="Terminé" class="w-4 h-4 rounded-full bg-transparent border-[3px] border-green-500"></div>
-           <div x-show="event.status == 'FINISHED_MEDALS'" title="Terminé" class="w-4 h-4 rounded-full bg-green-500"></div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-3">
+          <button @click.prevent="toggleAboutModal()"
+            class="px-3 py-1.5 text-xs font-semibold text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md transition-colors">
+            À propos
+          </button>
         </div>
       </div>
-      <div class="relative z-2 max-w-5xl mx-auto mt-2" x-show="event.competitorsExpanded">
-        <div x-show="event.competitors.length === 0" class="opacity-50 select-none text-center text-sm">Pas d'informations supplémentaires</div>
-        <ul>
-          <template x-for="c,i in event.competitors">
-            <li class="hover:bg-black/30 p-1 px-2 transition-colors">
-              <div x-show="c.code === 'TBD' || c.code === ''" class="flex justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-5"></div>
-                  <div class="w-6 text-right opacity-80" x-text="`${i + 1}`"></div>
-                  <span class="cursor-pointer select-none italic text-sm opacity-40">Non déterminé pour l'instant</span>
-                </div>
-              </div>
-              <div x-show="c.code !== 'TBD' && c.code !== ''" class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                  <div class="w-5 select-none">
-                    <div x-show="c.results?.medalType == 'ME_GOLD'" class="inline-block text-center w-5 h-5 bg-yellow-300 text-black text-sm font-bold rounded-full">O</div>
-                    <div x-show="c.results?.medalType == 'ME_SILVER'" class="inline-block text-center w-5 h-5 bg-gray-300 text-black text-sm font-bold rounded-full">A</div>
-                    <div x-show="c.results?.medalType == 'ME_BRONZE'" class="inline-block text-center w-5 h-5 bg-yellow-700 text-black text-sm font-bold rounded-full">B</div>
-                  </div>
-                  <div class="w-6 text-right opacity-80" x-show="c.results?.position" x-text="`${c.results.position}`"></div>
-                  <div class="w-6 text-right opacity-80" x-show="!c.results?.position" x-text="`-`"></div>
-                  <img class="inline-block w-5 select-none" :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${c.noc}.png`" />
-                  <div class="w-7 text-center select-none opacity-70 cursor-default text-sm" x-text="c.noc" x-bind:title="getNocLabel(c.noc)"></div>
-                  <span x-text="c.name" class="cursor-pointer select-all" @click="copyName(c.name)" :class="{'font-bold': c.results?.winnerLoserTie == 'W'}"></span>
-                  <div x-show="c.results?.winnerLoserTie == 'W'" class="inline-block select-none font-bold">(W)</div>
 
-                </div>
-                <div class="flex gap-2 items-center select-none">
-                  <div x-show="c.results?.irm" x-text="c.results?.irm" class="text-sm select-none italic opacity-50"></div>
-                  <div x-show="c.results?.mark" x-text="c.results?.mark" class="text-sm"></div>
-                  <div x-show="c.results?.additionalMark" x-text="c.results?.additionalMark" class="text-xs"></div>
-                </div>
-              </div>
-            </li>
-          </template>
-        </ul>
+      <!-- Alert Banner -->
+      <div @click="goToFinished()"
+        class="alert-end absolute top-full left-0 w-full bg-indigo-600/95 backdrop-blur-md border-b border-indigo-400/20 py-2 cursor-pointer shadow-xl">
+        <div
+          class="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-white animate-pulse">
+          <span>⚠️ Fin d'une épreuve ! Clique pour voir</span>
+        </div>
       </div>
-    </article>
-  </template>
-  <div x-show="aboutModal" @click.prevent="toggleAboutModal()" x-cloak class="bg-neutral-900/50 backdrop-blur fixed top-0 left-0 bottom-0 right-0 w-full h-dvh flex justify-center select-none overflow-scroll p-4">
-    <div class="max-h-[90vh] ">
-      <div class="flex flex-col gap-2 bg-neutral-800 p-4 rounded-lg">
-        <div class="font-bold text-lg text-center">JO Viewer</div>
-        <div>Cet outil permet de visualiser rapidement, en temps réel et sans rafraichissement de la page, le planning du jour des Jeux Olympiques et Paralympiques.</div>
-        <div class="font-bold">Il n'est pas géré par le Comité International Olympique.</div>
-        <div>Ce projet est Open-Source !<br/>Vous pouvez y contribuer ici :<br/><a @click.stop="" href="https://github.com/boherm/jo-viewer" target="_blank" class="underline">https://github.com/boherm/jo-viewer</a>.</div>
-        <div><br/></div>
-        <div class="font-bold">Astuces :</div>
-        <div>- Avec < Shift + C > vous pouvez scroller automatiquement vers les compétitions en cours.</div>
-        <div>- En faisant un clic droit sur une compétition, vous serez notifié quand celle-ci sera terminée.</div>
-        <div>- Les finales sont affichées avec une couleur plus claire dans la liste.</div>
-        <div><br/></div>
-        <div class="text-center"><button class="rounded text-lg px-4 py-1 font-bold bg-green-800">D'accord !</button></div>
+    </header>
+
+    <!-- Sport Filters (Sticky Sub-Header) -->
+    <div
+      class="fixed top-16 left-0 right-0 z-40 bg-zinc-900/95 backdrop-blur-sm border-b border-white/5 py-3 overflow-x-auto no-scrollbar"
+      x-show="!loading" x-transition:enter="transition ease-out duration-300 transform"
+      x-transition:enter-start="-translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100">
+      <div class="max-w-4xl mx-auto px-4 flex gap-2 items-center">
+        <!-- Live Toggle -->
+        <button @click="toggleLiveMode()"
+          class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-2 mr-2"
+          :class="liveMode ? 'bg-zinc-800 border-red-500/50 text-red-400 shadow-[0_0_15px_-3px_rgba(239,68,68,0.3)]' : 'bg-zinc-800 border-white/5 text-zinc-500 hover:text-zinc-300'">
+          <span class="relative flex h-2 w-2">
+            <span x-show="liveMode"
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2"
+              :class="liveMode ? 'bg-red-500' : 'bg-zinc-600'"></span>
+          </span>
+          LIVE
+        </button>
+        <div class="h-4 w-px bg-white/10 mx-1 flex-shrink-0"></div>
+
+        <button @click="selectedSport = 'all'"
+          class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border"
+          :class="selectedSport === 'all' ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'">
+          Tous
+        </button>
+        <template x-for="sport in uniqueSports" :key="sport">
+          <button @click="selectedSport = sport"
+            class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border"
+            :class="selectedSport === sport ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'"
+            x-text="sport">
+          </button>
+        </template>
       </div>
     </div>
+
+    <!-- Main Content -->
+    <main class="pt-32 px-3 max-w-4xl mx-auto space-y-4 min-h-screen">
+
+      <!-- Skeleton Loading -->
+      <template x-if="loading">
+        <div class="space-y-4 animate-pulse">
+          <template x-for="i in 6">
+            <div class="glass-card rounded-xl p-4 h-32 border border-white/5 bg-white/5">
+              <div class="flex justify-between mb-2">
+                <div class="h-4 w-16 bg-white/10 rounded"></div>
+                <div class="h-4 w-24 bg-white/10 rounded"></div>
+              </div>
+              <div class="space-y-2 mt-4">
+                <div class="h-3 w-32 bg-indigo-500/20 rounded"></div>
+                <div class="h-6 w-3/4 bg-white/10 rounded"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template x-for="(event, index) in filteredEvents" :key="event.id">
+        <article x-bind:data-id="event.id"
+          class="glass-card rounded-xl p-4 relative overflow-hidden group animate-enter"
+          :style="`animation-delay: ${index * 50}ms`" :class="{ 
+                  'border-l-4 !border-l-indigo-500': event.topBorder,
+                  'is-highlight': event.topBorder,
+                  'is-flashing': isHighlight(event),
+                  'opacity-60 grayscale-[0.5]': event.status == 'CANCELLED' 
+               }">
+
+          <!-- Active Highlight BG -->
+          <div class="absolute inset-0 bg-indigo-500/10 opacity-0 transition-opacity duration-500"
+            :class="{ 'opacity-100 animate-pulse': isHighlight(event) }"></div>
+
+          <!-- Card Content -->
+          <div class="relative z-10">
+
+            <!-- Top Row: Time & Status -->
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center gap-3">
+                <span
+                  class="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white border border-white/5 shadow-sm"
+                  x-text="event.startAt"></span>
+
+                <!-- Live Status Indicators -->
+                <template x-if="event.status == 'RUNNING'">
+                  <span class="flex h-2.5 w-2.5 relative">
+                    <span
+                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                </template>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <!-- Badges Status -->
+                <div x-show="event.status == 'RUNNING'"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">
+                  EN COURS</div>
+                <div x-show="event.status == 'CANCELLED'"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-700/50 text-zinc-400 border border-zinc-700/50">
+                  ANNULÉ</div>
+                <div x-show="event.status == 'RESCHEDULED'"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">
+                  REPROGRAMMÉ</div>
+                <div x-show="event.status == 'SCHEDULED_BREAK'"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">
+                  PAUSE</div>
+                <div x-show="event.status == 'FINISHED' || event.status == 'FINISHED_MEDALS'"
+                  class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20">
+                  <span x-show="event.status == 'FINISHED_MEDALS'">🏅</span> TERMINÉ
+                </div>
+
+                <!-- Actions -->
+                <img x-show="event.hasFR" class="w-5 h-3.5 rounded-sm object-cover opacity-80"
+                  src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png" />
+                <a @click.stop x-show="event.detailUrl" x-bind:href="event.detailUrl" x-bind:target="'_blank'"
+                  class="text-zinc-500 hover:text-white transition-colors p-1" title="Voir sur le site officiel">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Main Info: Sport & Event -->
+            <div class="cursor-pointer group-hover:pl-1 transition-all duration-300"
+              @click="if(event.competitors.length > 0) competitorsExpandToggle(event)"
+              x-on:contextmenu="$event.preventDefault();setTopBorder(event)">
+
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-0.5"
+                x-text="event.sportName"></h3>
+              <h2 class="text-base font-bold text-white leading-tight" x-text="event.eventName"></h2>
+
+              <div x-show="event.competitors.length > 0"
+                class="mt-2 flex items-center gap-1 text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                <span x-text="event.competitorsExpanded ? 'Masquer détails' : 'Voir détails'"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform"
+                  :class="{'rotate-180': event.competitorsExpanded}" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Competitors List -->
+            <div x-show="event.competitorsExpanded" x-collapse class="mt-4 pt-4 border-t border-white/5 space-y-2">
+
+              <div x-show="event.competitors.length === 0" class="text-zinc-600 text-xs italic text-center py-2">Pas de
+                détails disponibles</div>
+
+              <template x-for="(c, i) in event.competitors">
+                <div
+                  class="flex items-center justify-between p-2 rounded hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+
+                  <!-- Rank / Medal / Flag -->
+                  <div class="flex items-center gap-3">
+                    <!-- Medal/Rank -->
+                    <div class="w-6 flex flex-col items-center justify-center shrink-0">
+                      <template x-if="c.results?.medalType == 'ME_GOLD'">
+                        <div
+                          class="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-yellow-950"
+                          title="Or">1</div>
+                      </template>
+                      <template x-if="c.results?.medalType == 'ME_SILVER'">
+                        <div
+                          class="w-5 h-5 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-900"
+                          title="Argent">2</div>
+                      </template>
+                      <template x-if="c.results?.medalType == 'ME_BRONZE'">
+                        <div
+                          class="w-5 h-5 rounded-full bg-gradient-to-br from-orange-300 to-orange-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-orange-950"
+                          title="Bronze">3</div>
+                      </template>
+
+                      <!-- No Medal Rank -->
+                      <template x-if="!c.results?.medalType">
+                        <span class="text-zinc-500 text-xs font-mono" x-text="c.results?.position || '-'"></span>
+                      </template>
+                    </div>
+
+                    <!-- Flag -->
+                    <div class="relative group/flag">
+                      <img class="w-6 h-4 rounded-sm object-cover opacity-90"
+                        :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${c.noc}.png`" />
+                      <div
+                        class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover/flag:opacity-100 pointer-events-none whitespace-nowrap z-20"
+                        x-text="getNocLabel(c.noc)"></div>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="flex flex-col">
+                      <span x-text="c.name" class="text-sm cursor-pointer hover:text-indigo-400 transition-colors"
+                        :class="{'font-bold text-white': c.results?.winnerLoserTie == 'W', 'text-zinc-300': c.results?.winnerLoserTie != 'W', 'italic text-zinc-600': c.code === 'TBD'}"
+                        @click="copyName(c.name)">
+                      </span>
+                      <span x-show="c.code === 'TBD'" class="text-[10px] text-zinc-600">À déterminer</span>
+                    </div>
+
+                    <span x-show="c.results?.winnerLoserTie == 'W'"
+                      class="ml-2 text-[10px] font-bold text-green-400 border border-green-400/30 px-1 rounded">WIN</span>
+                  </div>
+
+                  <!-- Score / Mark -->
+                  <div class="flex flex-col items-end gap-0.5">
+                    <div x-show="c.results?.mark" x-text="c.results?.mark"
+                      class="text-sm font-mono font-medium text-white"></div>
+                    <div x-show="c.results?.additionalMark" x-text="c.results?.additionalMark"
+                      class="text-[10px] text-zinc-500 font-mono"></div>
+                    <div x-show="c.results?.irm" x-text="c.results?.irm" class="text-[10px] text-red-400 font-bold">
+                    </div>
+                  </div>
+
+                </div>
+              </template>
+            </div>
+
+          </div>
+        </article>
+      </template>
+
+      <!-- Footer -->
+      <footer class="text-center py-8">
+        <div class="text-xs text-zinc-600">
+          JO Viewer - Version 2.1.1<br>
+          <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
+            class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
+        </div>
+      </footer>
+
+    </main>
+
+    <!-- About Modal -->
+    <div x-show="aboutModal" x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-md"
+      x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-md"
+      x-transition:leave-end="opacity-0 backdrop-blur-none" @click.prevent="toggleAboutModal()" x-cloak
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+
+      <div @click.stop
+        class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl p-6 relative">
+
+        <button @click="toggleAboutModal()" class="absolute top-4 right-4 text-zinc-500 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="flex flex-col items-center mb-6">
+          <div
+            class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white shadow-lg mb-3">
+            JO</div>
+          <h2 class="text-xl font-bold text-white">JO Viewer</h2>
+          <span class="text-xs text-indigo-400 uppercase tracking-wide font-medium">Assistant Olympique</span>
+        </div>
+
+        <div class="space-y-4 text-sm text-zinc-300">
+          <p class="text-center italic text-zinc-500">
+            Un outil non-officiel pour suivre les épreuves 2026 en temps réel.
+          </p>
+
+          <div class="bg-zinc-800/50 p-4 rounded-lg border border-white/5 space-y-2">
+            <h3 class="font-bold text-white mb-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Astuces
+            </h3>
+            <ul class="space-y-1 list-disc list-inside text-zinc-400">
+              <li><strong class="text-zinc-200">Shift + C</strong> pour scroller aux épreuves en cours.</li>
+              <li><strong class="text-zinc-200">Clic Droit</strong> sur une épreuve pour recevoir une alerte à la fin.
+              </li>
+            </ul>
+          </div>
+
+          <div class="text-center border-t border-white/5 pt-4">
+            <p class="mb-2">Ce projet est Open Source ❤️</p>
+            <a href="https://github.com/boherm/jo-viewer" target="_blank"
+              class="inline-block px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white font-medium transition-colors">
+              Voir sur GitHub
+            </a>
+          </div>
+
+          <div class="text-[10px] text-zinc-600 text-center pt-4">
+            Données provenant de olympics.com. <br>
+            Non affilié au CIO.
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
-  <div class="p-2 text-neutral-400 text-center text-xs">by <a href="https://github.com/boherm" target="_blank" class="underline font-bold">boherm</a> - version 2.1.1</div>
-</div>
 
-<script>
-  const dateMin = new Date("2026-02-04");
-  const dateMax = new Date("2026-02-22");
-  const today = new Date() < dateMin ? dateMin : new Date() > dateMax ? dateMax : new Date();
+  <script>
+    const dateMin = new Date("2026-02-04");
+    const dateMax = new Date("2026-02-22");
+    const today = new Date() < dateMin ? dateMin : new Date() > dateMax ? dateMax : new Date();
 
-  const dateAPI = today.getFullYear().toString() + '-' + (today.getMonth() + 1).toString().padStart(2, 0) + '-' + today.getDate().toString().padStart(2, 0);
-  const urlAPI = `https://www.olympics.com/wmr-owg2026/schedules/api/FRA/schedule/day/${dateAPI}`;
-  const nocsUrlAPI = `https://www.olympics.com/wmr-owg2026/info/api/FRA/nocs`;
+    const urlAPI_Base = `https://www.olympics.com/wmr-owg2026/schedules/api/FRA/schedule/day/`;
+    const nocsUrlAPI = `https://www.olympics.com/wmr-owg2026/info/api/FRA/nocs`;
 
-  document.addEventListener('alpine:init', () => {
+    document.addEventListener('alpine:init', () => {
       Alpine.data('app', () => ({
         events: [],
         nocs: [],
         firstLoad: true,
+        loading: true,
+        selectedSport: 'all',
+        liveMode: false,
         tick: 0,
         scrollendTimeout: null,
-        currentDate: `${today.getDate().toString().padStart(2, 0)}/${(today.getMonth() + 1).toString().padStart(2, 0)}/${today.getFullYear().toString()}`,
+        currentDateObj: new Date(today), // Copy of today
         aboutModal: false,
+
+        get currentDateDisplay() {
+          return `${this.currentDateObj.getDate().toString().padStart(2, '0')}/${(this.currentDateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+        },
+
+        get isDateMin() {
+          return this.currentDateObj <= dateMin;
+        },
+
+        get isDateMax() {
+          return this.currentDateObj >= dateMax;
+        },
+
+        get uniqueSports() {
+          const sports = this.events.map(e => e.sportName).filter((v, i, a) => a.indexOf(v) === i);
+          return sports.sort();
+        },
+
+        get filteredEvents() {
+          let filtered = this.events;
+
+          if (this.selectedSport !== 'all') {
+            filtered = filtered.filter(e => e.sportName === this.selectedSport);
+          }
+
+          if (this.liveMode) {
+            filtered = filtered.filter(e => !['FINISHED', 'FINISHED_MEDALS', 'CANCELLED'].includes(e.status));
+          }
+
+          return filtered;
+        },
 
         init() {
           this.loadNocs();
-          this.loadData();
+          // Initial Load
+          this.loadData().then(() => {
+            setTimeout(() => { this.loading = false; }, 800); // Fake delay for skeleton demo
+          });
 
           setInterval(() => {
-            this.loadData();
-          }, 2000);
+            if (!this.loading) this.loadData(); // Poll unobtrusively
+          }, 5000); // 5s polling
 
           this.aboutModal = true;
           if (window.localStorage.getItem("aboutModal"))
@@ -148,6 +546,11 @@
           window.localStorage.setItem("aboutModal", false);
         },
 
+        toggleLiveMode() {
+          this.liveMode = !this.liveMode;
+          window.scrollTo(0, 0);
+        },
+
         scrollEnd() {
 
           if (this.scrollendTimeout) {
@@ -157,8 +560,8 @@
           this.scrollendTimeout = setTimeout(() => {
             const $events = document.querySelectorAll(`article`);
             $events.forEach(el => {
-              if (el.classList.contains('!bg-yellow-800')) {
-                el.classList.remove("!bg-yellow-800");
+              if (el.classList.contains('!bg-indigo-600')) {
+                el.classList.remove("!bg-indigo-600");
               }
             });
             this.scrollendTimeout = null;
@@ -202,22 +605,22 @@
 
           let nextScrollY = 0;
 
-          for ( let i = 0 ; i < highlights.length ; i++) {
+          for (let i = 0; i < highlights.length; i++) {
             const posY = highlights[i].getBoundingClientRect()?.top + currentScrollY;
 
             if (currentScrollY < posY) {
-              highlights[i].classList.add("!bg-yellow-800");
+              highlights[i].classList.add("!bg-indigo-600");
               nextScrollY = posY;
               break;
             }
           }
 
           if (nextScrollY === 0) {
-            for ( let i = 0 ; i < highlights.length ; i++) {
+            for (let i = 0; i < highlights.length; i++) {
               const posY = highlights[i].getBoundingClientRect()?.top + currentScrollY;
 
               if (currentScrollY < posY) {
-                highlights[i].classList.add("!bg-yellow-800");
+                highlights[i].classList.add("!bg-indigo-600");
                 nextScrollY = posY;
                 break;
               }
@@ -234,7 +637,7 @@
 
           let lastId = null;
 
-          for ( let i = 0 ; i < this.events.length ; i++) {
+          for (let i = 0; i < this.events.length; i++) {
             const time = this.events[i].startAt.split(':').map(d => parseFloat(d));
             if (time[0] > currentHours || time[0] == currentHours && time[1] > currentMinutes) {
               break;
@@ -244,14 +647,14 @@
 
           if (lastId) {
             const $event = document.querySelector(`article[data-id="${lastId}"]`);
-            $event.classList.add("!bg-yellow-800");
+            $event.classList.add("!bg-indigo-600");
             $event.classList.add("animate-pulse");
             const nextScrollY = $event?.getBoundingClientRect()?.top + window.scrollY - (window.innerHeight / 2) + 56;
 
-              setTimeout(() => {
-                $event.classList.remove("!bg-yellow-800");
-                $event.classList.remove("animate-pulse");
-              }, 4000);
+            setTimeout(() => {
+              $event.classList.remove("!bg-indigo-600");
+              $event.classList.remove("animate-pulse");
+            }, 4000);
 
             window.scrollTo(0, nextScrollY);
           }
@@ -264,7 +667,7 @@
           let nextScrollY = 0;
           let nextEvent = null;
 
-          for ( let i = 0 ; i < highlights.length ; i++) {
+          for (let i = 0; i < highlights.length; i++) {
             const posY = highlights[i].getBoundingClientRect()?.top + currentScrollY;
 
             if (currentScrollY > posY) {
@@ -276,7 +679,7 @@
           }
 
           if (nextScrollY === 0) {
-            for ( let i = 0 ; i < highlights.length ; i++) {
+            for (let i = 0; i < highlights.length; i++) {
               const posY = highlights[i].getBoundingClientRect()?.top + currentScrollY;
 
               if (currentScrollY > posY) {
@@ -288,7 +691,7 @@
             }
           }
 
-          nextEvent?.classList.add("!bg-yellow-800");
+          nextEvent?.classList.add("!bg-indigo-600");
 
           window.scrollTo(0, nextScrollY);
         },
@@ -321,225 +724,232 @@
         },
 
         copyName(name) {
-            let firstname = "";
-            let lastname = "";
+          let firstname = "";
+          let lastname = "";
 
-            const parts = name.split(/[\s]+/);
+          const parts = name.split(/[\s]+/);
 
-            parts.forEach(p => {
-              const regFirst = p.match(/^([A-Z]{1})[^A-Z]+/);
-              const regMid = p.match(/^([a-z]*)$/);
-              const regLast = p.match(/^([A-Zc\W]*)$/);
+          parts.forEach(p => {
+            const regFirst = p.match(/^([A-Z]{1})[^A-Z]+/);
+            const regMid = p.match(/^([a-z]*)$/);
+            const regLast = p.match(/^([A-Zc\W]*)$/);
 
-              if (regFirst && regFirst[1]) {
-                if (firstname !== "") firstname += " ";
-                firstname += regFirst[1] + '.';
-              } else if (regMid && regMid[1]) {
-                if (firstname !== "") firstname += " ";
-                firstname += regMid[1];
-              }
+            if (regFirst && regFirst[1]) {
+              if (firstname !== "") firstname += " ";
+              firstname += regFirst[1] + '.';
+            } else if (regMid && regMid[1]) {
+              if (firstname !== "") firstname += " ";
+              firstname += regMid[1];
+            }
 
-              if (regLast && regLast[1]) {
-                if (lastname !== "") lastname += " ";
+            if (regLast && regLast[1]) {
+              if (lastname !== "") lastname += " ";
 
-                const tmp = regLast[1].split('-');
-                lastname += tmp.map(d => {
-                  if (d[0] === 'M' && d[1] === 'c' && d[2]) {
-                    firstname = firstname.slice(0, -3);
-                    return "Mc" + d[2] + d.slice(3).toLowerCase();
-                  } else if (d[0] === 'O' && d[1] === '\'' && d[2]) {
-                    firstname = firstname.slice(0, -3);
-                    return "O'" + d[2] + d.slice(3).toLowerCase();
-                  }
-                  return d[0] + d.slice(1).toLowerCase();
-                }).join('-');
-              }
-            });
+              const tmp = regLast[1].split('-');
+              lastname += tmp.map(d => {
+                if (d[0] === 'M' && d[1] === 'c' && d[2]) {
+                  firstname = firstname.slice(0, -3);
+                  return "Mc" + d[2] + d.slice(3).toLowerCase();
+                } else if (d[0] === 'O' && d[1] === '\'' && d[2]) {
+                  firstname = firstname.slice(0, -3);
+                  return "O'" + d[2] + d.slice(3).toLowerCase();
+                }
+                return d[0] + d.slice(1).toLowerCase();
+              }).join('-');
+            }
+          });
 
-            let out = firstname + " " + lastname;
-            navigator.clipboard.writeText(out);
+          let out = firstname + " " + lastname;
+          navigator.clipboard.writeText(out);
         },
 
         generateDetailUrl(data) {
-            if (data.disciplineCode === "CER") {
-                return null;
+          if (data.disciplineCode === "CER") {
+            return null;
+          }
+
+          let competPrefix = '';
+          let action = 'race-result';
+
+          let p1 = data.id.substr(0, 3).toLowerCase();
+          let p2 = data.id.substr(3, 1).toLowerCase();
+          let p3 = data.id.substr(4, 18).toLowerCase();
+          let p4 = data.id.substr(22, 4).toLowerCase();
+          let p5 = data.id.substr(26).toLowerCase();
+
+
+          if (data.scheduleItemType !== "EVENT") {
+            action = 'team-lineups';
+          }
+
+          // Ski alpin
+          if (data.disciplineCode === "ALP") {
+            if (data.eventName.toLowerCase().includes("descente")) {
+              competPrefix = '/cl';
+            }
+            if (data.eventName.toLowerCase().includes("combiné")) {
+              competPrefix = '/tc';
+            }
+            if (data.eventName.toLowerCase().includes("slalom")) {
+              competPrefix = '/sl';
+            }
+            if (data.eventName.toLowerCase().includes("super-g")) {
+              competPrefix = '/cl';
+            }
+          }
+
+          // Saut à ski
+          if (data.disciplineCode === "SJP") {
+            action = 'result';
+            competPrefix = '/in';
+            if (data.eventName.toLowerCase().includes("super")) {
+              competPrefix = '/te';
+            }
+            if (data.eventName.toLowerCase().includes("équipe")) {
+              competPrefix = '/te';
+            }
+          }
+
+          // Patinage artistique
+          if (data.disciplineCode === "FSK") {
+            action = 'result';
+            competPrefix = '/ss';
+            if (data.eventName.toLowerCase().includes("couple")) {
+              competPrefix = '/prs';
+            }
+            if (data.eventName.toLowerCase().includes("danse")) {
+              competPrefix = '/id';
+            }
+            if (data.eventName.toLowerCase().includes("équipes")) {
+              competPrefix = '/te';
+            }
+          }
+
+          // Ski acrobatique
+          if (data.disciplineCode === "FRS") {
+            action = 'result';
+            if (data.eventName.toLowerCase().includes("bosses")) {
+              competPrefix = '/mo';
+            }
+            if (data.eventName.toLowerCase().includes("parallèle")) {
+              competPrefix = '/dm';
+            }
+            if (data.eventName.toLowerCase().includes("saut")) {
+              competPrefix = '/ae';
+            }
+            if (data.eventName.toLowerCase().includes("saut") && data.eventName.toLowerCase().includes("équipes")) {
+              competPrefix = '/at';
+            }
+            if (data.eventName.toLowerCase().includes("cross")) {
+              competPrefix = '/sx';
+            }
+            if (data.eventName.toLowerCase().includes("freeski")) {
+              competPrefix = '/je';
             }
 
-            let competPrefix = '';
-            let action = 'race-result';
+            // if (p5 === "000001--" || p5 === "000002--") {
+            p5 = "--------";
+            // }
+          }
 
-            let p1 = data.id.substr(0, 3).toLowerCase();
-            let p2 = data.id.substr(3, 1).toLowerCase();
-            let p3 = data.id.substr(4, 18).toLowerCase();
-            let p4 = data.id.substr(22, 4).toLowerCase();
-            let p5 = data.id.substr(26).toLowerCase();
+          // Ski de fond
+          if (data.disciplineCode === "CCS") {
+            if (data.eventName.toLowerCase().includes("individuel")) {
+              competPrefix = '/in';
+            }
+            if (data.eventName.toLowerCase().includes("skiathlon")) {
+              competPrefix = '/ms';
+            }
+            if (data.eventName.toLowerCase().includes("relais")) {
+              competPrefix = '/re';
+            }
+            if (data.eventName.toLowerCase().includes("départ en ligne")) {
+              competPrefix = '/ms';
+            }
+            if (data.eventName.toLowerCase().includes("sprint classique")) {
+              competPrefix = '/sp';
+            }
+            if (data.eventName.toLowerCase().includes("équipes")) {
+              competPrefix = '/tp';
+            }
+          }
 
-
-            if (data.scheduleItemType !== "EVENT") {
-                action = 'team-lineups';
+          // Snowboard
+          if (data.disciplineCode === "SBD") {
+            action = 'result';
+            if (data.eventName.toLowerCase().includes("slalom") && data.eventName.toLowerCase().includes("parallèle")) {
+              competPrefix = '/ps';
+            }
+            if (data.eventName.toLowerCase().includes("cross")) {
+              competPrefix = '/sx';
+            }
+            if (data.eventName.toLowerCase().includes("cross") && data.eventName.toLowerCase().includes("équipes")) {
+              competPrefix = '/xt';
+            }
+            if (data.eventName.toLowerCase().includes("halfpipe") || data.eventName.toLowerCase().includes("slopestyle") || data.eventName.toLowerCase().includes("big air")) {
+              competPrefix = '/je';
             }
 
-            // Ski alpin
-            if (data.disciplineCode === "ALP") {
-                if (data.eventName.toLowerCase().includes("descente")) {
-                    competPrefix = '/cl';
-                }
-                if (data.eventName.toLowerCase().includes("combiné")) {
-                    competPrefix = '/tc';
-                }
-                if (data.eventName.toLowerCase().includes("slalom")) {
-                    competPrefix = '/sl';
-                }
-                if (data.eventName.toLowerCase().includes("super-g")) {
-                    competPrefix = '/cl';
-                }
+            p5 = "--------";
+          }
+
+          // Patinage de vitesse
+          if (data.disciplineCode === "SSK") {
+            competPrefix = '/st';
+            if (data.eventName.toLowerCase().includes("départ")) {
+              competPrefix = '/ms';
+              p5 = "--------";
             }
-
-            // Saut à ski
-            if (data.disciplineCode === "SJP") {
-                action = 'result';
-                competPrefix = '/in';
-                if (data.eventName.toLowerCase().includes("super")) {
-                    competPrefix = '/te';
-                }
-                if (data.eventName.toLowerCase().includes("équipe")) {
-                    competPrefix = '/te';
-                }
+            if (data.eventName.toLowerCase().includes("poursuite")) {
+              competPrefix = '/tp';
             }
-
-            // Patinage artistique
-            if (data.disciplineCode === "FSK") {
-                action = 'result';
-                competPrefix = '/ss';
-                if (data.eventName.toLowerCase().includes("couple")) {
-                    competPrefix = '/prs';
-                }
-                if (data.eventName.toLowerCase().includes("danse")) {
-                    competPrefix = '/id';
-                }
-                if (data.eventName.toLowerCase().includes("équipes")) {
-                    competPrefix = '/te';
-                }
+          }
+          if (data.disciplineCode === "STK") {
+            competPrefix = '/in';
+            if (data.eventName.toLowerCase().includes("relais")) {
+              competPrefix = '/tp';
             }
-
-            // Ski acrobatique
-            if (data.disciplineCode === "FRS") {
-                action = 'result';
-                if (data.eventName.toLowerCase().includes("bosses")) {
-                    competPrefix = '/mo';
-                }
-                if (data.eventName.toLowerCase().includes("parallèle")) {
-                    competPrefix = '/dm';
-                }
-                if (data.eventName.toLowerCase().includes("saut")) {
-                    competPrefix = '/ae';
-                }
-                if (data.eventName.toLowerCase().includes("saut") && data.eventName.toLowerCase().includes("équipes")) {
-                    competPrefix = '/at';
-                }
-                if (data.eventName.toLowerCase().includes("cross")) {
-                    competPrefix = '/sx';
-                }
-                if (data.eventName.toLowerCase().includes("freeski")) {
-                    competPrefix = '/je';
-                }
-
-                // if (p5 === "000001--" || p5 === "000002--") {
-                    p5 = "--------";
-                // }
+            if (data.eventName.toLowerCase().includes("relais") && data.eventName.toLowerCase().includes("équipes")) {
+              competPrefix = '/tr';
             }
+            p5 = "--------";
+          }
 
-            // Ski de fond
-            if (data.disciplineCode === "CCS") {
-                if (data.eventName.toLowerCase().includes("individuel")) {
-                    competPrefix = '/in';
-                }
-                if (data.eventName.toLowerCase().includes("skiathlon")) {
-                    competPrefix = '/ms';
-                }
-                if (data.eventName.toLowerCase().includes("relais")) {
-                    competPrefix = '/re';
-                }
-                if (data.eventName.toLowerCase().includes("départ en ligne")) {
-                    competPrefix = '/ms';
-                }
-                if (data.eventName.toLowerCase().includes("sprint classique")) {
-                    competPrefix = '/sp';
-                }
-                if (data.eventName.toLowerCase().includes("équipes")) {
-                    competPrefix = '/tp';
-                }
+          // Combiné nordique
+          if (data.disciplineCode === "NCB") {
+            action = 'result';
+            competPrefix = '/igsj';
+            if (data.eventName.toLowerCase().includes("sprint")) {
+              competPrefix = '/tgsj';
             }
+          }
 
-            // Snowboard
-            if (data.disciplineCode === "SBD") {
-                action = 'result';
-                if (data.eventName.toLowerCase().includes("slalom") && data.eventName.toLowerCase().includes("parallèle")) {
-                    competPrefix = '/ps';
-                }
-                if (data.eventName.toLowerCase().includes("cross")) {
-                    competPrefix = '/sx';
-                }
-                if (data.eventName.toLowerCase().includes("cross") && data.eventName.toLowerCase().includes("équipes")) {
-                    competPrefix = '/xt';
-                }
-                if (data.eventName.toLowerCase().includes("halfpipe") || data.eventName.toLowerCase().includes("slopestyle") || data.eventName.toLowerCase().includes("big air")) {
-                    competPrefix = '/je';
-                }
-
-                p5 = "--------";
+          // Biathlon
+          if (data.disciplineCode === "BTH") {
+            competPrefix = '/in';
+            if (data.eventName.toLowerCase().includes("relais")) {
+              competPrefix = '/te';
             }
+          }
 
-            // Patinage de vitesse
-            if (data.disciplineCode === "SSK") {
-                competPrefix = '/st';
-                if (data.eventName.toLowerCase().includes("départ")) {
-                    competPrefix = '/ms';
-                    p5 = "--------";
-                }
-                if (data.eventName.toLowerCase().includes("poursuite")) {
-                    competPrefix = '/tp';
-                }
-            }
-            if (data.disciplineCode === "STK") {
-                competPrefix = '/in';
-                if (data.eventName.toLowerCase().includes("relais")) {
-                    competPrefix = '/tp';
-                }
-                if (data.eventName.toLowerCase().includes("relais") && data.eventName.toLowerCase().includes("équipes")) {
-                    competPrefix = '/tr';
-                }
-                p5 = "--------";
-            }
-
-            // Combiné nordique
-            if (data.disciplineCode === "NCB") {
-                action = 'result';
-                competPrefix = '/igsj';
-                if (data.eventName.toLowerCase().includes("sprint")) {
-                    competPrefix = '/tgsj';
-                }
-            }
-
-            // Biathlon
-            if (data.disciplineCode === "BTH") {
-                competPrefix = '/in';
-                if (data.eventName.toLowerCase().includes("relais")) {
-                    competPrefix = '/te';
-                }
-            }
-
-            return `https://www.olympics.com/fr/milano-cortina-2026/results/${p1}${competPrefix}/${p2}/${p3}/${p4}/${p5}/${action}`;
+          return `https://www.olympics.com/fr/milano-cortina-2026/results/${p1}${competPrefix}/${p2}/${p3}/${p4}/${p5}/${action}`;
         },
 
         async loadData() {
-          const api = await (await fetch(urlAPI)).json();
+          const dateAPI = this.currentDateObj.getFullYear().toString() + '-' + (this.currentDateObj.getMonth() + 1).toString().padStart(2, 0) + '-' + this.currentDateObj.getDate().toString().padStart(2, 0);
+          const api = await (await fetch(urlAPI_Base + dateAPI)).json();
           const topBorderSaved = JSON.parse(window.localStorage.getItem("topBorder")) || [];
           const expandedSaved = JSON.parse(window.localStorage.getItem("competitorsExpanded")) || [];
 
+          // Clear events if changing dates (simplification)
+          // But here we want to update them. For simplicity in this Alpine setup, 
+          // we can just rebuild the array or smart merge. 
+          // Given the structure, rebuilding is safest to avoid duplicates from other days.
+
+          let newEvents = [];
+
           api.units.forEach((data) => {
 
-            const event = this.events.findIndex(e => e.id == data.id);
             const competitors = data.competitors ?? [];
 
             const hasMedals = competitors.filter(c => ['ME_GOLD', 'ME_SILVER', 'ME_BRONZE'].includes(c.results?.medalType)).length > 0;
@@ -570,22 +980,32 @@
               'hasFR': competitors.findIndex(c => c.noc === 'FRA') !== -1,
             };
 
-            if (event === -1) {
-              this.events.push(eventData);
-            } else {
-              const idx = this.events.findIndex(e => e.id == data.id);
-              eventData.competitorsExpanded = this.events[idx].competitorsExpanded;
-              eventData.topBorder = this.events[idx].topBorder;
+            newEvents.push(eventData);
 
-              this.events[idx] = {
-                ...eventData,
-              }
-            }
+          });
 
+          this.events = newEvents;
+        },
+
+        changeDate(delta) {
+          const newDate = new Date(this.currentDateObj);
+          newDate.setDate(newDate.getDate() + delta);
+
+          if (newDate < dateMin || newDate > dateMax) return;
+
+          this.loading = true;
+          this.currentDateObj = newDate;
+          this.selectedSport = 'all'; // Reset filter when changing day
+
+          this.loadData().then(() => {
+            // Scroll to top
+            window.scrollTo(0, 0);
+            setTimeout(() => { this.loading = false; }, 500);
           });
         }
       }))
     })
-</script>
+  </script>
 </body>
+
 </html>
