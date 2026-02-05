@@ -3,7 +3,7 @@
   <title>JO 2026</title>
   <meta charset="utf-8">
   <meta name="description" content="Suivez en direct le planning des compétitions des Jeux Olympiques et Paralympiques d’hiver !">
-  <link rel="icon" href="https://gstatic.olympics.com/s3/mc2026/favicon/favicon-194x194.png">
+  <link rel="icon" href="https://gstatic.olympics.com/s3/mc2026/favicon/favicon-194x194.png" sizes="194x194">
   <meta name="viewport" content="width=device-width,initial-scale=0.8">
   <style>
     [x-cloak] { display: none !important; }
@@ -28,7 +28,7 @@
   </div>
   <div @click="goToFinished()" class="alert-end fixed z-10 top-0 left-0 w-full p-3 text-center text-sm italic bg-red-500 opacity-0 transition-all cursor-pointer select-none animate-bounce hover:animate-none">!! Alerte fin d'épreuve !!</div>
   <template x-for="event in events">
-    <article x-bind:data-id="event.id" class="relative group w-full p-2 pt-1 border-t-4 border-t-transparent" :class="{ 'odd:bg-gray-900 even:bg-gray-900/80': event.medalFlag == 0, 'bg-gray-700': event.medalFlag >= 1, '!border-t-red-500': event.topBorder, 'is-highlight': event.topBorder, 'is-flashing': isHighlight(event) }">
+    <article x-bind:data-id="event.id" class="relative group w-full p-2 pt-1 border-t-4 border-t-transparent" :class="{ 'odd:bg-gray-900 even:bg-gray-900/80': event.medalFlag == 0, 'bg-gray-700': event.medalFlag >= 1, '!border-t-red-500': event.topBorder, 'is-highlight': event.topBorder, 'is-flashing': isHighlight(event), '!bg-orange-900 opacity-60': event.status == 'CANCELLED' }">
       <div class="absolute z-1 top-0 left-0 right-0 bottom-0" :class="{ 'bg-red-600 animate-pulse group-hover:bg-red-600/60 transition-all group-hover:animate-none': isHighlight(event) }"></div>
       <div class="relative z-2 select-none flex items-center justify-between">
         <div class="flex pl-8 flex-auto items-center cursor-pointer gap-5 justify-between" @click="if(event.competitors.length > 0) competitorsExpandToggle(event)"
@@ -36,19 +36,20 @@
           <span class="grow-0 text-white/60" x-text="event.startAt"></span>
           <div class="grow truncate">
             <div class="font-bold text-sm truncate" x-text="event.sportName"></div>
-            <div class="text-sm truncate" x-text="event.eventName"></div>   
+            <div class="text-sm truncate" x-text="event.eventName"></div>
           </div>
-          <div class="grow-0 flex gap-2 items-center">
+          <div class="grow-0 flex gap-4 items-center">
           <img x-show="event.hasFR" class="inline-block w-5 select-none" src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png" />
-          <a @click.stop x-show="event.competitors.length > 0" x-bind:href="event.detailUrl" x-bind:target="'_blank'" class="opacity-50 select-none">></a>  
+          <a @click.stop x-show="event.detailUrl" x-bind:href="event.detailUrl" x-bind:target="'_blank'" class="opacity-50 select-none">&#128279;</a>
           </div>
         </div>
         <div class="grow-0 absolute left-1 w-4">
            <div x-show="event.status == 'RUNNING'" title="En cours" class="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+           <div x-show="event.status == 'CANCELLED'" title="Annulé" class="w-4 h-4 rounded-full bg-black"></div>
            <div x-show="event.status == 'RESCHEDULED'" title="Reprogrammé" class="w-4 h-4 rounded-full bg-black"></div>
            <div x-show="event.status == 'SCHEDULED_BREAK'" title="En Pause" class="w-4 h-4 rounded-full bg-transparent border-[3px] border-orange-500"></div>
-           <div x-show="event.status == 'FINISHED'" title="Terminé" class="w-4 h-4 rounded-full bg-transparent border-[3px] border-green-500"></div>     
-           <div x-show="event.status == 'FINISHED_MEDALS'" title="Terminé" class="w-4 h-4 rounded-full bg-green-500"></div>     
+           <div x-show="event.status == 'FINISHED'" title="Terminé" class="w-4 h-4 rounded-full bg-transparent border-[3px] border-green-500"></div>
+           <div x-show="event.status == 'FINISHED_MEDALS'" title="Terminé" class="w-4 h-4 rounded-full bg-green-500"></div>
         </div>
       </div>
       <div class="relative z-2 max-w-5xl mx-auto mt-2" x-show="event.competitorsExpanded">
@@ -106,18 +107,18 @@
       </div>
     </div>
   </div>
-  <div class="p-2 text-neutral-400 text-center text-xs">by <a href="https://github.com/boherm" target="_blank" class="underline font-bold">boherm</a> - version 2.0.1</div>
+  <div class="p-2 text-neutral-400 text-center text-xs">by <a href="https://github.com/boherm" target="_blank" class="underline font-bold">boherm</a> - version 2.1.0</div>
 </div>
 
 <script>
   const dateMin = new Date("2026-02-04");
   const dateMax = new Date("2026-02-22");
   const today = new Date() < dateMin ? dateMin : new Date() > dateMax ? dateMax : new Date();
-  
+
   const dateAPI = today.getFullYear().toString() + '-' + (today.getMonth() + 1).toString().padStart(2, 0) + '-' + today.getDate().toString().padStart(2, 0);
   const urlAPI = `https://www.olympics.com/wmr-owg2026/schedules/api/FRA/schedule/day/${dateAPI}`;
   const nocsUrlAPI = `https://www.olympics.com/wmr-owg2026/info/api/FRA/nocs`;
-  
+
   document.addEventListener('alpine:init', () => {
       Alpine.data('app', () => ({
         events: [],
@@ -151,7 +152,7 @@
           if (this.scrollendTimeout) {
             clearTimeout(this.scrollendTimeout);
           }
-          
+
           this.scrollendTimeout = setTimeout(() => {
             const $events = document.querySelectorAll(`article`);
             $events.forEach(el => {
@@ -243,13 +244,13 @@
           if (lastId) {
             const $event = document.querySelector(`article[data-id="${lastId}"]`);
             $event.classList.add("!bg-yellow-800");
+            $event.classList.add("animate-pulse");
             const nextScrollY = $event?.getBoundingClientRect()?.top + window.scrollY - (window.innerHeight / 2) + 56;
 
-            if (nextScrollY === window.scrollY) {
               setTimeout(() => {
                 $event.classList.remove("!bg-yellow-800");
-              }, 250);
-            }
+                $event.classList.remove("animate-pulse");
+              }, 4000);
 
             window.scrollTo(0, nextScrollY);
           }
@@ -296,7 +297,7 @@
           let expanded = JSON.parse(window.localStorage.getItem("competitorsExpanded")) || [];
 
           if (event.competitorsExpanded) {
-            expanded.push(event.id);          
+            expanded.push(event.id);
           } else {
             expanded = expanded.filter(e => e !== event.id);
           }
@@ -358,6 +359,178 @@
             navigator.clipboard.writeText(out);
         },
 
+        generateDetailUrl(data) {
+            if (data.disciplineCode === "CER") {
+                return null;
+            }
+
+            let competPrefix = '';
+            let action = 'race-result';
+
+            let p1 = data.id.substr(0, 3).toLowerCase();
+            let p2 = data.id.substr(3, 1).toLowerCase();
+            let p3 = data.id.substr(4, 18).toLowerCase();
+            let p4 = data.id.substr(22, 4).toLowerCase();
+            let p5 = data.id.substr(26).toLowerCase();
+
+
+            if (data.scheduleItemType !== "EVENT") {
+                action = 'team-lineups';
+            }
+
+            // Ski alpin
+            if (data.disciplineCode === "ALP") {
+                if (data.eventName.toLowerCase().includes("descente")) {
+                    competPrefix = '/cl';
+                }
+                if (data.eventName.toLowerCase().includes("combiné")) {
+                    competPrefix = '/tc';
+                }
+                if (data.eventName.toLowerCase().includes("slalom")) {
+                    competPrefix = '/sl';
+                }
+                if (data.eventName.toLowerCase().includes("super-g")) {
+                    competPrefix = '/cl';
+                }
+            }
+
+            // Saut à ski
+            if (data.disciplineCode === "SJP") {
+                action = 'result';
+                competPrefix = '/in';
+                if (data.eventName.toLowerCase().includes("super")) {
+                    competPrefix = '/te';
+                }
+                if (data.eventName.toLowerCase().includes("équipe")) {
+                    competPrefix = '/te';
+                }
+            }
+
+            // Patinage artistique
+            if (data.disciplineCode === "FSK") {
+                action = 'result';
+                competPrefix = '/ss';
+                if (data.eventName.toLowerCase().includes("couple")) {
+                    competPrefix = '/prs';
+                }
+                if (data.eventName.toLowerCase().includes("danse")) {
+                    competPrefix = '/id';
+                }
+                if (data.eventName.toLowerCase().includes("équipes")) {
+                    competPrefix = '/te';
+                }
+            }
+
+            // Ski acrobatique
+            if (data.disciplineCode === "FRS") {
+                action = 'result';
+                if (data.eventName.toLowerCase().includes("bosses")) {
+                    competPrefix = '/mo';
+                }
+                if (data.eventName.toLowerCase().includes("parallèle")) {
+                    competPrefix = '/dm';
+                }
+                if (data.eventName.toLowerCase().includes("saut")) {
+                    competPrefix = '/ae';
+                }
+                if (data.eventName.toLowerCase().includes("saut") && data.eventName.toLowerCase().includes("équipes")) {
+                    competPrefix = '/at';
+                }
+                if (data.eventName.toLowerCase().includes("cross")) {
+                    competPrefix = '/sx';
+                }
+                if (data.eventName.toLowerCase().includes("freeski")) {
+                    competPrefix = '/je';
+                }
+
+                // if (p5 === "000001--" || p5 === "000002--") {
+                    p5 = "--------";
+                // }
+            }
+
+            // Ski de fond
+            if (data.disciplineCode === "CCS") {
+                if (data.eventName.toLowerCase().includes("individuel")) {
+                    competPrefix = '/in';
+                }
+                if (data.eventName.toLowerCase().includes("skiathlon")) {
+                    competPrefix = '/ms';
+                }
+                if (data.eventName.toLowerCase().includes("relais")) {
+                    competPrefix = '/re';
+                }
+                if (data.eventName.toLowerCase().includes("départ en ligne")) {
+                    competPrefix = '/ms';
+                }
+                if (data.eventName.toLowerCase().includes("sprint classique")) {
+                    competPrefix = '/sp';
+                }
+                if (data.eventName.toLowerCase().includes("équipes")) {
+                    competPrefix = '/tp';
+                }
+            }
+
+            // Snowboard
+            if (data.disciplineCode === "SBD") {
+                action = 'result';
+                if (data.eventName.toLowerCase().includes("slalom") && data.eventName.toLowerCase().includes("parallèle")) {
+                    competPrefix = '/ps';
+                }
+                if (data.eventName.toLowerCase().includes("cross")) {
+                    competPrefix = '/sx';
+                }
+                if (data.eventName.toLowerCase().includes("cross") && data.eventName.toLowerCase().includes("équipes")) {
+                    competPrefix = '/xt';
+                }
+                if (data.eventName.toLowerCase().includes("halfpipe") || data.eventName.toLowerCase().includes("slopestyle") || data.eventName.toLowerCase().includes("big air")) {
+                    competPrefix = '/je';
+                }
+
+                p5 = "--------";
+            }
+
+            // Patinage de vitesse
+            if (data.disciplineCode === "SSK") {
+                competPrefix = '/st';
+                if (data.eventName.toLowerCase().includes("départ")) {
+                    competPrefix = '/ms';
+                    p5 = "--------";
+                }
+                if (data.eventName.toLowerCase().includes("poursuite")) {
+                    competPrefix = '/tp';
+                }
+            }
+            if (data.disciplineCode === "STK") {
+                competPrefix = '/in';
+                if (data.eventName.toLowerCase().includes("relais")) {
+                    competPrefix = '/tp';
+                }
+                if (data.eventName.toLowerCase().includes("relais") && data.eventName.toLowerCase().includes("équipes")) {
+                    competPrefix = '/tr';
+                }
+                p5 = "--------";
+            }
+
+            // Combiné nordique
+            if (data.disciplineCode === "NCB") {
+                action = 'result';
+                competPrefix = '/igsj';
+                if (data.eventName.toLowerCase().includes("sprint")) {
+                    competPrefix = '/tgsj';
+                }
+            }
+
+            // Biathlon
+            if (data.disciplineCode === "BTH") {
+                competPrefix = '/in';
+                if (data.eventName.toLowerCase().includes("relais")) {
+                    competPrefix = '/te';
+                }
+            }
+
+            return `https://www.olympics.com/fr/milano-cortina-2026/results/${p1}${competPrefix}/${p2}/${p3}/${p4}/${p5}/${action}`;
+        },
+
         async loadData() {
           const api = await (await fetch(urlAPI)).json();
           const topBorderSaved = JSON.parse(window.localStorage.getItem("topBorder")) || [];
@@ -380,12 +553,12 @@
               'status': hasMedals ? 'FINISHED_MEDALS' : data.status,
               'competitors': competitors,
               'competitorsExpanded': expandedSaved.includes(data.id),
-              'detailUrl': `https://olympics.com${data.extraData?.detailUrl ?? ''}`,
+              'detailUrl': this.generateDetailUrl(data),
               'hasFR': competitors.findIndex(c => c.noc === 'FRA') !== -1,
             };
 
             if (event === -1) {
-              this.events.push(eventData);            
+              this.events.push(eventData);
             } else {
               const idx = this.events.findIndex(e => e.id == data.id);
               eventData.competitorsExpanded = this.events[idx].competitorsExpanded;
