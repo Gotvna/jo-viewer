@@ -131,7 +131,7 @@
             JO
           </div>
           <div class="leading-tight">
-            <div class="font-bold text-sm tracking-wide text-white">MILANO CORTINA 2026</div>
+            <div class="font-bold text-sm tracking-wide text-white hidden sm:block">MILANO CORTINA 2026</div>
             <!-- Date Navigation -->
             <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 select-none">
               <button @click="changeDateDelta(-1)" :disabled="isDateMin"
@@ -1141,8 +1141,10 @@
           this.events = [];
 
           this.loadData().then(() => {
-            window.scrollTo(0, 0);
             this.loading = false;
+            setTimeout(() => {
+              window.scrollTo(0, 0);
+            }, 150);
           });
         },
 
