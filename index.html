@@ -1,5 +1,4 @@
 <html class="scroll-smooth">
-
 <head>
   <title>JO 2026</title>
   <meta charset="utf-8">
@@ -8,16 +7,12 @@
   <link rel="icon" href="https://gstatic.olympics.com/s3/mc2026/favicon/favicon-194x194.png" sizes="194x194">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Alpine -->
   <script src="https://unpkg.com/alpinejs" defer></script>
 
   <style>
@@ -139,15 +134,15 @@
             <div class="font-bold text-sm tracking-wide text-white">MILANO CORTINA 2026</div>
             <!-- Date Navigation -->
             <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 select-none">
-              <button @click="changeDate(-1)" :disabled="isDateMin"
+              <button @click="changeDateDelta(-1)" :disabled="isDateMin"
                 class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-              <span x-text="currentDateDisplay" class="text-indigo-400 min-w-[80px] text-center"></span>
-              <button @click="changeDate(1)" :disabled="isDateMax"
+              <span @click="changeDateToday()" x-text="currentDateDisplay" class="text-indigo-400 min-w-[80px] text-center"></span>
+              <button @click="changeDateDelta(1)" :disabled="isDateMax"
                 class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -240,11 +235,11 @@
       <template x-for="(event, index) in filteredEvents" :key="event.id">
         <article x-bind:data-id="event.id"
           class="glass-card rounded-xl p-4 relative overflow-hidden group animate-enter"
-          :style="`animation-delay: ${index * 50}ms`" :class="{ 
+          :style="`animation-delay: ${index * 50}ms`" :class="{
                   'border-l-4 !border-l-indigo-500': event.topBorder,
                   'is-highlight': event.topBorder,
                   'is-flashing': isHighlight(event),
-                  'opacity-60 grayscale-[0.5]': event.status == 'CANCELLED' 
+                  'opacity-60 grayscale-[0.5]': event.status == 'CANCELLED'
                }">
 
           <!-- Active Highlight BG -->
@@ -356,7 +351,7 @@
 
                       <!-- No Medal Rank -->
                       <template x-if="!c.results?.medalType">
-                        <span class="text-zinc-500 text-xs font-mono" x-text="c.results?.position || '-'"></span>
+                          <span class="text-zinc-500 text-xs font-mono" :class="{ 'text-zinc-500': !c.results?.position, 'text-zinc-200': c.results?.position }" x-text="c.results?.position || '-'"></span>
                       </template>
                     </div>
 
@@ -403,7 +398,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 2.1.1<br>
+          JO Viewer - Version 3.0.0<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -591,6 +586,7 @@
         medalsModal: false,
         medals: [],
         medalsError: false,
+        firstLoad: true,
 
         get currentDateDisplay() {
           return `${this.currentDateObj.getDate().toString().padStart(2, '0')}/${(this.currentDateObj.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -627,12 +623,12 @@
           this.loadNocs();
           // Initial Load
           this.loadData().then(() => {
-            setTimeout(() => { this.loading = false; }, 800); // Fake delay for skeleton demo
+              this.loading = false;
           });
 
           setInterval(() => {
-            if (!this.loading) this.loadData(); // Poll unobtrusively
-          }, 5000); // 5s polling
+            if (!this.loading) this.loadData();
+          }, 5000);
 
           this.aboutModal = true;
           if (window.localStorage.getItem("aboutModal"))
@@ -654,6 +650,10 @@
         toggleLiveMode() {
           this.liveMode = !this.liveMode;
           window.scrollTo(0, 0);
+
+          if (this.liveMode) {
+              this.changeDateToday();
+          }
         },
 
         scrollEnd() {
@@ -1080,8 +1080,8 @@
           const expandedSaved = JSON.parse(window.localStorage.getItem("competitorsExpanded")) || [];
 
           // Clear events if changing dates (simplification)
-          // But here we want to update them. For simplicity in this Alpine setup, 
-          // we can just rebuild the array or smart merge. 
+          // But here we want to update them. For simplicity in this Alpine setup,
+          // we can just rebuild the array or smart merge.
           // Given the structure, rebuilding is safest to avoid duplicates from other days.
 
           let newEvents = [];
@@ -1123,27 +1123,41 @@
           });
 
           this.events = newEvents;
+
+          if (this.firstLoad) {
+            this.goToTime();
+            this.firstLoad = false;
+          }
         },
 
-        changeDate(delta) {
-          const newDate = new Date(this.currentDateObj);
-          newDate.setDate(newDate.getDate() + delta);
-
+        changeDate(newDate) {
           if (newDate < dateMin || newDate > dateMax) return;
 
           this.loading = true;
           this.currentDateObj = newDate;
-          this.selectedSport = 'all'; // Reset filter when changing day
+          this.selectedSport = 'all';
+
+          this.events = [];
 
           this.loadData().then(() => {
-            // Scroll to top
             window.scrollTo(0, 0);
-            setTimeout(() => { this.loading = false; }, 500);
+            this.loading = false;
           });
+        },
+
+        changeDateToday() {
+          this.changeDate(new Date());
+        },
+
+        changeDateDelta(delta) {
+          const newDate = new Date(this.currentDateObj);
+          newDate.setHours(0, 0, 0, 0);
+          newDate.setDate(newDate.getDate() + delta);
+          this.changeDate(newDate);
+          this.liveMode = false;
         }
       }))
     })
   </script>
 </body>
-
 </html>
