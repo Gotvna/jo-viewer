@@ -398,7 +398,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.0.1<br>
+          JO Viewer - Version 3.0.2<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -750,19 +750,20 @@
             lastId = this.events[i].id;
           }
 
-          if (lastId) {
+          setTimeout(() => {
             const $event = document.querySelector(`article[data-id="${lastId}"]`);
-            $event?.classList.add("!bg-indigo-600");
-            $event?.classList.add("animate-pulse");
-            const nextScrollY = $event?.getBoundingClientRect()?.top + window.scrollY - (window.innerHeight / 2) + 56;
 
-            setTimeout(() => {
-              $event?.classList.remove("!bg-indigo-600");
-              $event?.classList.remove("animate-pulse");
-            }, 4000);
+            if ($event) {
+              $event.classList.add("!bg-indigo-600");
+              const nextScrollY = $event.getBoundingClientRect()?.top + window.scrollY - (window.innerHeight / 2) + 56;
 
-            window.scrollTo(0, nextScrollY);
-          }
+              setTimeout(() => {
+                $event.classList.remove("!bg-indigo-600");
+              }, 1000);
+
+              window.scrollTo(0, nextScrollY);
+            }
+          }, 100);
         },
 
         reverseScroll() {
