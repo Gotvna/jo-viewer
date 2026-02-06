@@ -320,7 +320,7 @@
             </div>
 
             <!-- Competitors List -->
-            <div x-show="event.competitorsExpanded" x-collapse class="mt-4 pt-4 border-t border-white/5 space-y-2">
+            <div x-show="event.competitorsExpanded" class="mt-4 pt-4 border-t border-white/5 space-y-2">
 
               <div x-show="event.competitors.length === 0" class="text-zinc-600 text-xs italic text-center py-2">Pas de
                 détails disponibles</div>
@@ -398,7 +398,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.0.0<br>
+          JO Viewer - Version 3.0.1<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -563,7 +563,7 @@
   </div>
 
   <script>
-    const dateMin = new Date("2026-02-04");
+    const dateMin = new Date("2026-02-03");
     const dateMax = new Date("2026-02-22");
     const today = new Date() < dateMin ? dateMin : new Date() > dateMax ? dateMax : new Date();
 
@@ -581,7 +581,7 @@
         liveMode: false,
         tick: 0,
         scrollendTimeout: null,
-        currentDateObj: new Date(today), // Copy of today
+        currentDateObj: new Date(today),
         aboutModal: false,
         medalsModal: false,
         medals: [],
@@ -593,7 +593,7 @@
         },
 
         get isDateMin() {
-          return this.currentDateObj <= dateMin;
+          return this.currentDateObj < dateMin;
         },
 
         get isDateMax() {
@@ -752,13 +752,13 @@
 
           if (lastId) {
             const $event = document.querySelector(`article[data-id="${lastId}"]`);
-            $event.classList.add("!bg-indigo-600");
-            $event.classList.add("animate-pulse");
+            $event?.classList.add("!bg-indigo-600");
+            $event?.classList.add("animate-pulse");
             const nextScrollY = $event?.getBoundingClientRect()?.top + window.scrollY - (window.innerHeight / 2) + 56;
 
             setTimeout(() => {
-              $event.classList.remove("!bg-indigo-600");
-              $event.classList.remove("animate-pulse");
+              $event?.classList.remove("!bg-indigo-600");
+              $event?.classList.remove("animate-pulse");
             }, 4000);
 
             window.scrollTo(0, nextScrollY);
