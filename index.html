@@ -398,7 +398,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.0.2<br>
+          JO Viewer - Version 3.0.3<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -633,6 +633,9 @@
           this.aboutModal = true;
           if (window.localStorage.getItem("aboutModal"))
             this.aboutModal = window.localStorage.getItem("aboutModal") !== "false";
+
+          if (window.localStorage.getItem("liveMode"))
+            this.liveMode = window.localStorage.getItem("liveMode") === "true";
         },
 
         toggleAboutModal() {
@@ -649,6 +652,7 @@
 
         toggleLiveMode() {
           this.liveMode = !this.liveMode;
+          window.localStorage.setItem("liveMode", this.liveMode);
           window.scrollTo(0, 0);
 
           if (this.liveMode) {
@@ -1094,7 +1098,8 @@
             const hasMedals = competitors.filter(c => ['ME_GOLD', 'ME_SILVER', 'ME_BRONZE'].includes(c.results?.medalType)).length > 0;
 
             competitors.sort((a, b) => {
-              if (b.results?.winnerLoserTie === "W" && a.results?.winnerLoserTie === "L") return 1;
+              if (b.results?.winnerLoserTie == "L") return -1;
+              if (a.results?.winnerLoserTie == "W") return 1;
 
               const posA = a.results?.position;
               const posB = b.results?.position;
