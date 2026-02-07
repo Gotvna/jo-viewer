@@ -398,7 +398,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.0.3<br>
+          JO Viewer - Version 3.0.4<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -1117,7 +1117,7 @@
               'topBorder': topBorderSaved.includes(data.id),
               'sportName': data.disciplineName,
               'eventName': data.eventUnitName,
-              'startAt': new Date(data.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              'startAt': new Date(data.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }),
               'medalFlag': data.medalFlag > 0,
               'status': hasMedals ? 'FINISHED_MEDALS' : data.status,
               'competitors': competitors,
