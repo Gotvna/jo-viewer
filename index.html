@@ -1,4 +1,5 @@
 <html class="scroll-smooth">
+
 <head>
   <title>JO 2026</title>
   <meta charset="utf-8">
@@ -12,25 +13,35 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   <script src="https://unpkg.com/alpinejs" defer></script>
 
-  <style>
-    /* Base Setup */
-    :root {
-      --font-inter: 'Inter', sans-serif;
+  <style type="text/css">
+    @theme {
+      --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+      --animate-enter: slideUpFade 0.4s ease-out forwards;
+
+      @keyframes slideUpFade {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     }
 
+    /* Base Setup */
     body {
-      font-family: var(--font-inter);
       background-color: #09090b;
-      /* Zinc 950 */
       background-image:
         radial-gradient(ellipse at top right, rgba(120, 113, 108, 0.15), transparent 50%),
         radial-gradient(ellipse at bottom left, rgba(63, 63, 70, 0.15), transparent 50%);
       background-attachment: fixed;
-      color: #fafafa;
-      -webkit-font-smoothing: antialiased;
     }
 
     [x-cloak] {
@@ -56,46 +67,27 @@
       background: rgba(255, 255, 255, 0.4);
     }
 
-    /* Utilities */
-    .glass-panel {
+    /* Modern Utilities with Tailwind v4 */
+    @utility glass-panel {
       background: rgba(24, 24, 27, 0.6);
-      /* Zinc 900 / 60% */
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
-    .glass-card {
+    @utility glass-card {
       background: rgba(39, 39, 42, 0.4);
-      /* Zinc 800 / 40% */
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.05);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
 
-    .glass-card:hover {
-      background: rgba(39, 39, 42, 0.6);
-      transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Animations */
-    @keyframes slideUpFade {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
+      &:hover {
+        background: rgba(39, 39, 42, 0.6);
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
       }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-enter {
-      animation: slideUpFade 0.4s ease-out forwards;
     }
 
     /* Alerts */
@@ -141,7 +133,8 @@
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-              <span @click="changeDateToday()" x-text="currentDateDisplay" class="text-indigo-400 min-w-[80px] text-center"></span>
+              <span @click="changeDateToday()" x-text="currentDateDisplay"
+                class="text-indigo-400 min-w-[80px] text-center"></span>
               <button @click="changeDateDelta(1)" :disabled="isDateMax"
                 class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
@@ -351,7 +344,9 @@
 
                       <!-- No Medal Rank -->
                       <template x-if="!c.results?.medalType">
-                          <span class="text-zinc-500 text-xs font-mono" :class="{ 'text-zinc-500': !c.results?.position, 'text-zinc-200': c.results?.position }" x-text="c.results?.position || '-'"></span>
+                        <span class="text-zinc-500 text-xs font-mono"
+                          :class="{ 'text-zinc-500': !c.results?.position, 'text-zinc-200': c.results?.position }"
+                          x-text="c.results?.position || '-'"></span>
                       </template>
                     </div>
 
@@ -532,7 +527,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5 text-sm">
-              <template x-for="(row, index) in medals" :key="row.noc">
+              <template x-for="(row, index) in medals" :key="row.organ || index">
                 <tr class="hover:bg-white/5 transition-colors group">
                   <td class="px-4 py-3 text-center font-mono text-zinc-500 group-hover:text-white" x-text="row.u_rank">
                   </td>
@@ -623,7 +618,7 @@
           this.loadNocs();
           // Initial Load
           this.loadData().then(() => {
-              this.loading = false;
+            this.loading = false;
           });
 
           setInterval(() => {
@@ -656,7 +651,7 @@
           window.scrollTo(0, 0);
 
           if (this.liveMode) {
-              this.changeDateToday();
+            this.changeDateToday();
           }
         },
 
@@ -830,21 +825,26 @@
         },
 
         async loadMedals() {
-          // Check if medals data is scheduled to be available
-          const startDate = new Date("2026-02-07T11:30:00+01:00");
-          if (new Date() < startDate) {
-            console.log("Medals API not yet active (Before Feb 7). Showing placeholder.");
-            this.medalsError = true;
-            return;
-          }
-
           this.medalsError = false;
           try {
             const response = await fetch(medalsUrlAPI);
             if (!response.ok) throw new Error('API Error');
 
             const api = await response.json();
-            this.medals = api.table || [];
+            const table = api.medalStandings?.medalsTable || [];
+
+            this.medals = table.map(item => {
+              const total = item.medalsNumber.find(x => x.type === 'Total');
+              return {
+                u_rank: item.rank,
+                organ: item.organisation,
+                name: item.description,
+                g_me: total?.gold || 0,
+                s_me: total?.silver || 0,
+                b_me: total?.bronze || 0,
+                t_me: total?.total || 0
+              };
+            });
 
             if (this.medals.length === 0) {
               this.medalsError = true;
@@ -1168,4 +1168,5 @@
     })
   </script>
 </body>
+
 </html>
