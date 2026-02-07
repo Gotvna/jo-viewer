@@ -393,7 +393,7 @@
       <!-- Footer -->
       <footer class="text-center py-8">
         <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.0.3<br>
+          JO Viewer - Version 3.1.1<br>
           <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
             class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
         </div>
@@ -509,8 +509,8 @@
           <div x-show="medalsError && medals.length === 0"
             class="p-8 flex flex-col items-center justify-center text-zinc-400 space-y-4 text-center">
             <div class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-xl">⏳</div>
-            <p class="font-medium">Pas encore de données officielles.</p>
-            <p class="text-xs text-zinc-500">Le tableau sera disponible à partir du 7 Février à 11h30.</p>
+            <p class="font-medium">Erreur lors de la récupération des données.</p>
+            <p class="text-xs text-zinc-500">Merci de réessayer plus tard !</p>
           </div>
 
           <!-- Table -->
@@ -527,21 +527,21 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5 text-sm">
-              <template x-for="(row, index) in medals" :key="row.organ || index">
+              <template x-for="(row, index) in medals" :key="row.organisation">
                 <tr class="hover:bg-white/5 transition-colors group">
-                  <td class="px-4 py-3 text-center font-mono text-zinc-500 group-hover:text-white" x-text="row.u_rank">
+                  <td class="px-4 py-3 text-center font-mono text-zinc-200 group-hover:text-white" x-text="row.rank">
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
                       <img class="w-6 h-4 rounded-[2px] object-cover shadow-sm"
-                        :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${row.organ}.png`" />
-                      <span class="font-medium text-zinc-200 group-hover:text-white" x-text="row.name"></span>
+                        :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${row.organisation}.png`" />
+                      <span class="font-medium text-zinc-200 group-hover:text-white" x-text="row.description"></span>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-center font-bold text-yellow-500 bg-yellow-500/5" x-text="row.g_me"></td>
-                  <td class="px-4 py-3 text-center font-bold text-zinc-400 bg-zinc-400/5" x-text="row.s_me"></td>
-                  <td class="px-4 py-3 text-center font-bold text-orange-500 bg-orange-500/5" x-text="row.b_me"></td>
-                  <td class="px-4 py-3 text-center font-bold text-white" x-text="row.t_me"></td>
+                  <td class="px-4 py-3 text-center font-bold text-yellow-500 bg-yellow-500/5" x-text="row.g"></td>
+                  <td class="px-4 py-3 text-center font-bold text-zinc-400 bg-zinc-400/5" x-text="row.s"></td>
+                  <td class="px-4 py-3 text-center font-bold text-orange-500 bg-orange-500/5" x-text="row.b"></td>
+                  <td class="px-4 py-3 text-center font-bold text-white" x-text="row.t"></td>
                 </tr>
               </template>
             </tbody>
@@ -825,26 +825,12 @@
         },
 
         async loadMedals() {
-          this.medalsError = false;
           try {
             const response = await fetch(medalsUrlAPI);
             if (!response.ok) throw new Error('API Error');
 
             const api = await response.json();
-            const table = api.medalStandings?.medalsTable || [];
-
-            this.medals = table.map(item => {
-              const total = item.medalsNumber.find(x => x.type === 'Total');
-              return {
-                u_rank: item.rank,
-                organ: item.organisation,
-                name: item.description,
-                g_me: total?.gold || 0,
-                s_me: total?.silver || 0,
-                b_me: total?.bronze || 0,
-                t_me: total?.total || 0
-              };
-            });
+            this.medals = api.medalStandings?.medalsTable || [];
 
             if (this.medals.length === 0) {
               this.medalsError = true;
@@ -852,8 +838,15 @@
 
             // Sort safety
             this.medals.sort((a, b) => {
-              if (a.u_rank !== b.u_rank) return a.u_rank - b.u_rank;
+              if (a.rank !== b.rank) return a.rank - b.rank;
               return 0;
+            });
+
+            this.medals.map(d => {
+                d.g = d.medalsNumber.reduce((acc, m) => acc + m.gold, 0);
+                d.s = d.medalsNumber.reduce((acc, m) => acc + m.silver, 0);
+                d.b = d.medalsNumber.reduce((acc, m) => acc + m.bronze, 0);
+                d.t = d.medalsNumber.reduce((acc, m) => acc + m.total, 0);
             });
 
           } catch (e) {
@@ -1084,11 +1077,6 @@
           const topBorderSaved = JSON.parse(window.localStorage.getItem("topBorder")) || [];
           const expandedSaved = JSON.parse(window.localStorage.getItem("competitorsExpanded")) || [];
 
-          // Clear events if changing dates (simplification)
-          // But here we want to update them. For simplicity in this Alpine setup,
-          // we can just rebuild the array or smart merge.
-          // Given the structure, rebuilding is safest to avoid duplicates from other days.
-
           let newEvents = [];
 
           api.units.forEach((data) => {
@@ -1115,7 +1103,7 @@
               'topBorder': topBorderSaved.includes(data.id),
               'sportName': data.disciplineName,
               'eventName': data.eventUnitName,
-              'startAt': new Date(data.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              'startAt': new Date(data.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }),
               'medalFlag': data.medalFlag > 0,
               'status': hasMedals ? 'FINISHED_MEDALS' : data.status,
               'competitors': competitors,
