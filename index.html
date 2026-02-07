@@ -1,4 +1,5 @@
 <html class="scroll-smooth">
+
 <head>
   <title>JO 2026</title>
   <meta charset="utf-8">
@@ -78,15 +79,20 @@
     .glass-card {
       background: rgba(39, 39, 42, 0.65);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        background: rgba(39, 39, 42, 0.85);
-        transform: translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.25);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        background: rgba(45, 45, 48, 0.85);
+        transform: translateY(-3px) scale(1.01);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+      }
+
+      &:active {
+        transform: translateY(-1px) scale(0.995);
+        transition-duration: 0.15s;
       }
     }
 
@@ -103,6 +109,16 @@
       pointer-events: auto;
       transform: translateY(0);
     }
+
+    .mask-gradient-x {
+      -webkit-mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
+      mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
+    }
+
+    .mask-gradient-right {
+      -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+      mask-image: linear-gradient(to right, black 85%, transparent);
+    }
   </style>
 </head>
 
@@ -113,55 +129,62 @@
     class="app relative pb-20">
 
     <!-- Sticky Header -->
-    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b-0 border-white/10">
-      <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+    <header class="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-white/10">
+      <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
-        <!-- Logo / Title -->
-        <div class="flex items-center gap-3">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 flex-shrink-0 animate-enter">
           <div
-            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20 cursor-pointer active:scale-95 transition-transform"
+            @click="changeDateToday()">
             JO
           </div>
-          <div class="leading-tight">
-            <div class="font-bold text-sm tracking-wide text-white hidden sm:block">MILANO CORTINA 2026</div>
-            <!-- Date Navigation -->
-            <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 select-none">
-              <button @click="changeDateDelta(-1)" :disabled="isDateMin"
-                class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+          <div class="font-bold text-sm tracking-wide text-white hidden lg:block uppercase tracking-widest">Milano 2026
+          </div>
+        </div>
+
+        <!-- Date Carousel (Centered) -->
+        <div class="flex-1 max-w-xl relative group mx-1 sm:mx-4">
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth mask-gradient-x py-2 pt-4"
+            x-ref="dateScroll">
+            <template x-for="date in datesList" :key="date.iso">
+              <button @click="changeDate(new Date(date.iso))"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex flex-col items-center min-w-[54px] border border-transparent relative h-[40px] justify-center"
+                :class="[
+                  isSameDate(date.obj) ? 'bg-white text-zinc-900 shadow-xl z-20' : 'text-zinc-500 hover:text-white hover:bg-white/5',
+                  isToday(date.obj) && !isSameDate(date.obj) ? 'bg-indigo-500/10 border-indigo-400/30 text-indigo-400' : ''
+                ]">
+                <span class="text-[9px] uppercase opacity-70 leading-none mb-0.5" x-text="date.dayName"></span>
+                <span class="text-sm leading-none" x-text="date.dayNum"></span>
               </button>
-              <span @click="changeDateToday()" x-text="currentDateDisplay"
-                class="text-indigo-400 min-w-[80px] text-center"></span>
-              <button @click="changeDateDelta(1)" :disabled="isDateMax"
-                class="p-1 hover:text-white disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
-            </div>
+            </template>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center gap-3">
-          <button @click.prevent="toggleMedalsModal()"
-            class="px-3 py-1.5 text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-md transition-colors flex items-center gap-2">
-            <span>🏆</span> <span class="hidden sm:inline">Médailles</span>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button @click="changeDateToday()" title="Aujourd'hui"
+            class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-indigo-400 transition-all active:scale-90 hidden sm:flex items-center gap-1.5 text-xs font-bold border border-white/5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="hidden md:inline">Today</span>
           </button>
-          <button @click.prevent="toggleAboutModal()"
-            class="px-3 py-1.5 text-xs font-semibold text-zinc-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md transition-colors">
-            À propos
+
+          <div class="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
+
+          <button @click.prevent="toggleMedalsModal()"
+            class="p-2 text-zinc-400 hover:text-amber-400 transition-colors bg-white/5 hover:bg-white/10 rounded-lg border border-white/5">
+            🏆
           </button>
         </div>
       </div>
 
       <!-- Alert Banner -->
       <div @click="goToFinished()"
-        class="alert-end absolute top-full left-0 w-full bg-indigo-600/95 backdrop-blur-md border-b border-indigo-400/20 py-2 cursor-pointer shadow-xl">
+        class="alert-end absolute top-full left-0 w-full bg-indigo-600/95 backdrop-blur-md border-b border-indigo-400/20 py-2 cursor-pointer shadow-xl transition-all duration-300">
         <div
           class="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-white animate-pulse">
           <span>⚠️ Fin d'une épreuve ! Clique pour voir</span>
@@ -170,42 +193,136 @@
     </header>
 
     <!-- Sport Filters (Sticky Sub-Header) -->
-    <div
-      class="fixed top-16 left-0 right-0 z-40 bg-zinc-900/95 backdrop-blur-sm border-b border-white/5 py-3 overflow-x-auto no-scrollbar"
+    <div class="fixed top-16 left-0 right-0 z-40 bg-zinc-900/95 backdrop-blur-sm border-b border-white/5 py-4"
       x-show="!loading" x-transition:enter="transition ease-out duration-300 transform"
       x-transition:enter-start="-translate-y-4 opacity-0" x-transition:enter-end="translate-y-0 opacity-100">
-      <div class="max-w-4xl mx-auto px-4 flex gap-2 items-center">
-        <!-- Live Toggle -->
-        <button @click="toggleLiveMode()"
-          class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-2 mr-2"
-          :class="liveMode ? 'bg-zinc-800 border-red-500/50 text-red-400 shadow-[0_0_15px_-3px_rgba(239,68,68,0.3)]' : 'bg-zinc-800 border-white/5 text-zinc-500 hover:text-zinc-300'">
-          <span class="relative flex h-2 w-2">
-            <span x-show="liveMode"
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2"
-              :class="liveMode ? 'bg-red-500' : 'bg-zinc-600'"></span>
-          </span>
-          LIVE
-        </button>
-        <div class="h-4 w-px bg-white/10 mx-1 flex-shrink-0"></div>
+      <div class="max-w-4xl mx-auto px-4 flex items-center gap-6">
 
-        <button @click="selectedSport = 'all'"
-          class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border"
-          :class="selectedSport === 'all' ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'">
-          Tous
-        </button>
-        <template x-for="sport in uniqueSports" :key="sport">
-          <button @click="selectedSport = sport"
-            class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border"
-            :class="selectedSport === sport ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'"
-            x-text="sport">
+        <!-- Fixed Actions Block -->
+        <div class="flex items-center gap-2 flex-shrink-0 transition-all duration-300"
+          :class="{ 'flex-1': searchOpen }">
+
+          <!-- Mobile Search Toggle & Bar -->
+          <div class="relative flex items-center" :class="{ 'flex-1': searchOpen }">
+            <!-- Desktop Bar (sm+) -->
+            <div class="relative hidden sm:block group">
+              <input type="text" x-model="searchQuery" placeholder="Rechercher..."
+                class="w-32 lg:w-48 bg-zinc-800/50 border border-white/5 rounded-full py-1.5 pl-8 pr-4 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all focus:w-48 lg:focus:w-64">
+              <svg class="absolute left-3 top-2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-indigo-400"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <button x-show="searchQuery" @click="searchQuery = ''"
+                class="absolute right-3 top-2 text-zinc-500 hover:text-white">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Mobile Toggle Button (hidden sm+) -->
+            <button x-show="!searchOpen" @click="searchOpen = true; $nextTick(() => $refs.mobileSearch.focus())"
+              class="sm:hidden p-2 bg-zinc-800 border border-white/5 rounded-full text-zinc-400 hover:text-white transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </button>
+
+            <!-- Mobile Input Field (hidden sm+) -->
+            <div x-show="searchOpen" x-cloak class="sm:hidden flex-1 relative animate-enter">
+              <input type="text" x-model="searchQuery" x-ref="mobileSearch" placeholder="Rechercher..."
+                @keyup.escape="searchOpen = false"
+                class="w-full bg-zinc-800 border border-indigo-500/50 rounded-full py-1.5 pl-8 pr-8 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50">
+              <svg class="absolute left-3 top-2 w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <button @click="searchOpen = false; searchQuery = ''"
+                class="absolute right-3 top-2 text-zinc-500 hover:text-white">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Toggle -->
+          <div class="flex items-center gap-2 shrink-0">
+            <button x-show="!searchOpen" @click="toggleLiveMode()" aria-label="Activer le mode LIVE"
+              aria-pressed="liveMode"
+              class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-2 cursor-pointer focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+              :class="liveMode ? 'bg-red-500/10 border-red-500/50 text-red-400 shadow-[0_0_15px_-3px_rgba(239,68,68,0.3)]' : 'bg-zinc-800 border-white/5 text-zinc-500 hover:text-zinc-300'">
+              <span class="relative flex h-2 w-2">
+                <span x-show="liveMode"
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2"
+                  :class="liveMode ? 'bg-red-500' : 'bg-zinc-600'"></span>
+              </span>
+              LIVE
+            </button>
+          </div>
+
+          <!-- France Filter -->
+          <button @click="toggleFranceFilter()" aria-label="Filtrer par athlètes français" :aria-pressed="franceOnly"
+            class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900 h-[30px]"
+            :class="franceOnly ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'">
+            <img class="w-4 h-3 rounded-[1px] object-cover"
+              src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png"
+              alt="Drapeau France" />
+            <span class="hidden sm:inline">FRA</span>
           </button>
-        </template>
+        </div>
+
+        <div class="h-6 w-px bg-white/10 flex-shrink-0"></div>
+
+        <div class="flex-1 relative overflow-hidden group">
+          <div class="flex items-center gap-3 overflow-x-auto no-scrollbar mask-gradient-x px-16 py-1 scroll-smooth"
+            x-ref="sportScroll" x-effect="selectedSport; scrollSelectedSportIntoView()">
+            <button @click="selectedSport = 'all'" aria-label="Tous les sports" :aria-pressed="selectedSport === 'all'"
+              class="px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 snap-start"
+              :class="selectedSport === 'all' ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'">
+              Tous
+            </button>
+            <template x-for="sport in uniqueSports" :key="sport">
+              <button @click="selectedSport = sport" :aria-label="'Filtrer par ' + sport"
+                :aria-pressed="selectedSport === sport"
+                class="px-5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 snap-start"
+                :class="selectedSport === sport ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-900/20' : 'bg-zinc-800 border-white/5 text-zinc-400 hover:bg-zinc-700 hover:text-white'"
+                x-text="sport">
+              </button>
+            </template>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <!-- Main Content -->
-    <main class="pt-32 px-3 max-w-4xl mx-auto space-y-4 min-h-screen">
+    <main class="pt-40 px-3 max-w-4xl mx-auto space-y-4 min-h-screen">
+
+      <!-- Empty State -->
+      <div x-show="!loading && filteredEvents.length === 0" x-cloak
+        class="flex flex-col items-center justify-center py-10 text-center space-y-4 animate-enter px-4">
+        <div
+          class="w-16 h-16 rounded-full bg-zinc-800/50 flex items-center justify-center border border-white/5 shadow-inner">
+          <svg class="w-8 h-8 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-lg font-medium text-white"
+            x-text="searchQuery ? 'Aucun résultat pour \'' + searchQuery + '\'' : 'Aucun événement trouvé'"></h3>
+          <p class="text-sm text-zinc-500 max-w-xs mx-auto">Essaie de modifier tes filtres ou rafraîchis la page !</p>
+        </div>
+        <button @click="selectedSport = 'all'; franceOnly = false; liveMode = false; searchQuery = ''"
+          class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors border-b border-indigo-500/30 hover:border-indigo-500 pb-0.5">
+          Réinitialiser les filtres
+        </button>
+      </div>
 
       <!-- Skeleton Loading -->
       <template x-if="loading">
@@ -225,179 +342,188 @@
         </div>
       </template>
 
-      <template x-for="(event, index) in filteredEvents" :key="event.id">
-        <article x-bind:data-id="event.id"
-          class="glass-card rounded-xl p-4 relative overflow-hidden group animate-enter"
-          :style="`animation-delay: ${index * 50}ms`" :class="{
-                  'border-l-4 !border-l-indigo-500': event.topBorder,
-                  'is-highlight': event.topBorder,
-                  'is-flashing': isHighlight(event),
-                  'opacity-60 grayscale-[0.5]': event.status == 'CANCELLED'
-               }">
+      <!-- Event List -->
+      <div class="space-y-4 pb-12" :key="searchQuery + selectedSport + currentDateDisplay">
+        <template x-for="(event, index) in filteredEvents" :key="event.id">
+          <article x-bind:data-id="event.id"
+            class="glass-card rounded-xl p-4 relative overflow-hidden group animate-enter cursor-pointer transition-all duration-200"
+            :style="`animation-delay: ${index * 20}ms`" :class="{
+                    'border-l-4 !border-l-indigo-500 shadow-lg shadow-indigo-500/10': event.topBorder,
+                    'is-highlight': event.topBorder,
+                    'is-flashing': isHighlight(event),
+                    'opacity-60 grayscale-[0.5]': event.status == 'CANCELLED'
+                 }">
 
-          <!-- Active Highlight BG -->
-          <div class="absolute inset-0 bg-indigo-500/15 opacity-0 transition-opacity duration-500"
-            :class="{ 'opacity-100 animate-pulse': isHighlight(event) }"></div>
+            <!-- Active Highlight BG -->
+            <div class="absolute inset-0 bg-indigo-500/15 opacity-0 transition-opacity duration-500"
+              :class="{ 'opacity-100 animate-pulse': isHighlight(event) }"></div>
 
-          <!-- Card Content -->
-          <div class="relative z-10">
+            <!-- Card Content -->
+            <div class="relative z-10">
 
-            <!-- Top Row: Time & Status -->
-            <div class="flex items-start justify-between mb-2">
-              <div class="flex items-center gap-3">
-                <span
-                  class="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white border border-white/5 shadow-sm"
-                  x-text="event.startAt"></span>
+              <!-- Top Row: Time & Status -->
+              <div class="flex items-start justify-between mb-2">
+                <div class="flex items-center gap-3">
+                  <span
+                    class="px-2 py-0.5 rounded text-xs font-bold bg-white/10 text-white border border-white/5 shadow-sm"
+                    x-text="event.startAt"></span>
 
-                <!-- Live Status Indicators -->
-                <template x-if="event.status == 'RUNNING'">
-                  <span class="flex h-2.5 w-2.5 relative">
-                    <span
-                      class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                  </span>
+                  <!-- Live Status Indicators -->
+                  <template x-if="event.status == 'RUNNING'">
+                    <span class="flex h-2.5 w-2.5 relative">
+                      <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                  </template>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <!-- Badges Status -->
+                  <div x-show="event.status == 'RUNNING'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">
+                    EN COURS</div>
+                  <div x-show="event.status == 'CANCELLED'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-700/50 text-zinc-400 border border-zinc-700/50">
+                    ANNULÉ</div>
+                  <div x-show="event.status == 'RESCHEDULED'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">
+                    REPROGRAMMÉ</div>
+                  <div x-show="event.status == 'SCHEDULED_BREAK'"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">
+                    PAUSE</div>
+                  <div x-show="event.status == 'FINISHED' || event.status == 'FINISHED_MEDALS'"
+                    class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20">
+                    <span x-show="event.status == 'FINISHED_MEDALS'">🏅</span> TERMINÉ
+                  </div>
+                  <!-- French Medal Badge -->
+                  <div x-show="event.status == 'FINISHED' && event.hasFR && event.medalFlag"
+                    class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-900/40 to-white/10 text-blue-200 border border-blue-500/30 animate-pulse">
+                    <span>🇫🇷</span> MÉDAILLE
+                  </div>
+
+                  <!-- Actions -->
+                  <img x-show="event.hasFR" class="w-5 h-3.5 rounded-sm object-cover opacity-80"
+                    src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png" />
+                  <a @click.stop x-show="event.detailUrl" x-bind:href="event.detailUrl" x-bind:target="'_blank'"
+                    class="text-zinc-500 hover:text-white transition-colors p-1" title="Voir sur le site officiel">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Main Info: Sport & Event -->
+              <div class="cursor-pointer group-hover:pl-1 transition-all duration-300"
+                @click="if(event.competitors.length > 0) competitorsExpandToggle(event)"
+                x-on:contextmenu="$event.preventDefault();setTopBorder(event)">
+
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-0.5"
+                  x-text="event.sportName">
+                </h3>
+                <h2 class="text-base font-bold text-white leading-tight" x-text="event.eventName"></h2>
+
+                <div x-show="event.competitors.length > 0"
+                  class="mt-2 flex items-center gap-1 text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                  <span x-text="event.competitorsExpanded ? 'Masquer détails' : 'Voir détails'"></span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform"
+                    :class="{'rotate-180': event.competitorsExpanded}" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Competitors List -->
+              <div x-show="event.competitorsExpanded" class="mt-4 pt-4 border-t border-white/10 space-y-2">
+
+                <div x-show="event.competitors.length === 0" class="text-zinc-600 text-xs italic text-center py-2">Pas
+                  de
+                  détails disponibles</div>
+
+                <template x-for="(c, i) in event.competitors">
+                  <div
+                    class="flex items-center justify-between p-2 rounded hover:bg-white/10 transition-colors border border-transparent hover:border-white/10">
+
+                    <!-- Rank / Medal / Flag -->
+                    <div class="flex items-center gap-3">
+                      <!-- Medal/Rank -->
+                      <div class="w-6 flex flex-col items-center justify-center shrink-0">
+                        <template x-if="c.results?.medalType == 'ME_GOLD'">
+                          <div
+                            class="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-yellow-950"
+                            title="Or">1</div>
+                        </template>
+                        <template x-if="c.results?.medalType == 'ME_SILVER'">
+                          <div
+                            class="w-5 h-5 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-900"
+                            title="Argent">2</div>
+                        </template>
+                        <template x-if="c.results?.medalType == 'ME_BRONZE'">
+                          <div
+                            class="w-5 h-5 rounded-full bg-gradient-to-br from-orange-300 to-orange-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-orange-950"
+                            title="Bronze">3</div>
+                        </template>
+
+                        <!-- No Medal Rank -->
+                        <template x-if="!c.results?.medalType">
+                          <span class="text-zinc-500 text-xs font-mono"
+                            :class="{ 'text-zinc-500': !c.results?.position, 'text-zinc-200': c.results?.position }"
+                            x-text="c.results?.position || '-'"></span>
+                        </template>
+                      </div>
+
+                      <!-- Flag -->
+                      <div class="relative group/flag">
+                        <img class="w-6 h-4 rounded-sm object-cover opacity-90"
+                          :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${c.noc}.png`" />
+                        <div
+                          class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover/flag:opacity-100 pointer-events-none whitespace-nowrap z-20"
+                          x-text="getNocLabel(c.noc)"></div>
+                      </div>
+
+                      <!-- Name -->
+                      <div class="flex flex-col">
+                        <span x-text="c.name" class="text-sm cursor-pointer hover:text-indigo-400 transition-colors"
+                          :class="{'font-bold text-white': c.results?.winnerLoserTie == 'W', 'text-zinc-300': c.results?.winnerLoserTie != 'W', 'italic text-zinc-600': c.code === 'TBD'}"
+                          @click="copyName(c.name)">
+                        </span>
+                        <span x-show="c.code === 'TBD'" class="text-[10px] text-zinc-600">À déterminer</span>
+                      </div>
+
+                      <span x-show="c.results?.winnerLoserTie == 'W'"
+                        class="ml-2 text-[10px] font-bold text-green-400 border border-green-400/30 px-1 rounded">WIN</span>
+                    </div>
+
+                    <!-- Score / Mark -->
+                    <div class="flex flex-col items-end gap-0.5">
+                      <div x-show="c.results?.mark" x-text="c.results?.mark"
+                        class="text-sm font-mono font-medium text-white"></div>
+                      <div x-show="c.results?.additionalMark" x-text="c.results?.additionalMark"
+                        class="text-[10px] text-zinc-500 font-mono"></div>
+                      <div x-show="c.results?.irm" x-text="c.results?.irm" class="text-[10px] text-red-400 font-bold">
+                      </div>
+                    </div>
+
+                  </div>
                 </template>
               </div>
 
-              <div class="flex items-center gap-2">
-                <!-- Badges Status -->
-                <div x-show="event.status == 'RUNNING'"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/20">
-                  EN COURS</div>
-                <div x-show="event.status == 'CANCELLED'"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-700/50 text-zinc-400 border border-zinc-700/50">
-                  ANNULÉ</div>
-                <div x-show="event.status == 'RESCHEDULED'"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/20">
-                  REPROGRAMMÉ</div>
-                <div x-show="event.status == 'SCHEDULED_BREAK'"
-                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">
-                  PAUSE</div>
-                <div x-show="event.status == 'FINISHED' || event.status == 'FINISHED_MEDALS'"
-                  class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/20">
-                  <span x-show="event.status == 'FINISHED_MEDALS'">🏅</span> TERMINÉ
-                </div>
-
-                <!-- Actions -->
-                <img x-show="event.hasFR" class="w-5 h-3.5 rounded-sm object-cover opacity-80"
-                  src="https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/FRA.png" />
-                <a @click.stop x-show="event.detailUrl" x-bind:href="event.detailUrl" x-bind:target="'_blank'"
-                  class="text-zinc-500 hover:text-white transition-colors p-1" title="Voir sur le site officiel">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                  </svg>
-                </a>
-              </div>
             </div>
+          </article>
+        </template>
 
-            <!-- Main Info: Sport & Event -->
-            <div class="cursor-pointer group-hover:pl-1 transition-all duration-300"
-              @click="if(event.competitors.length > 0) competitorsExpandToggle(event)"
-              x-on:contextmenu="$event.preventDefault();setTopBorder(event)">
-
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-0.5"
-                x-text="event.sportName"></h3>
-              <h2 class="text-base font-bold text-white leading-tight" x-text="event.eventName"></h2>
-
-              <div x-show="event.competitors.length > 0"
-                class="mt-2 flex items-center gap-1 text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                <span x-text="event.competitorsExpanded ? 'Masquer détails' : 'Voir détails'"></span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transition-transform"
-                  :class="{'rotate-180': event.competitorsExpanded}" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-            </div>
-
-            <!-- Competitors List -->
-            <div x-show="event.competitorsExpanded" class="mt-4 pt-4 border-t border-white/10 space-y-2">
-
-              <div x-show="event.competitors.length === 0" class="text-zinc-600 text-xs italic text-center py-2">Pas de
-                détails disponibles</div>
-
-              <template x-for="(c, i) in event.competitors">
-                <div
-                  class="flex items-center justify-between p-2 rounded hover:bg-white/10 transition-colors border border-transparent hover:border-white/10">
-
-                  <!-- Rank / Medal / Flag -->
-                  <div class="flex items-center gap-3">
-                    <!-- Medal/Rank -->
-                    <div class="w-6 flex flex-col items-center justify-center shrink-0">
-                      <template x-if="c.results?.medalType == 'ME_GOLD'">
-                        <div
-                          class="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-yellow-950"
-                          title="Or">1</div>
-                      </template>
-                      <template x-if="c.results?.medalType == 'ME_SILVER'">
-                        <div
-                          class="w-5 h-5 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 shadow-sm flex items-center justify-center text-[10px] font-bold text-gray-900"
-                          title="Argent">2</div>
-                      </template>
-                      <template x-if="c.results?.medalType == 'ME_BRONZE'">
-                        <div
-                          class="w-5 h-5 rounded-full bg-gradient-to-br from-orange-300 to-orange-600 shadow-sm flex items-center justify-center text-[10px] font-bold text-orange-950"
-                          title="Bronze">3</div>
-                      </template>
-
-                      <!-- No Medal Rank -->
-                      <template x-if="!c.results?.medalType">
-                        <span class="text-zinc-500 text-xs font-mono"
-                          :class="{ 'text-zinc-500': !c.results?.position, 'text-zinc-200': c.results?.position }"
-                          x-text="c.results?.position || '-'"></span>
-                      </template>
-                    </div>
-
-                    <!-- Flag -->
-                    <div class="relative group/flag">
-                      <img class="w-6 h-4 rounded-sm object-cover opacity-90"
-                        :src="`https://gstatic.olympics.com/s1/t_original/static/noc/oly/3x2/180x120/${c.noc}.png`" />
-                      <div
-                        class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover/flag:opacity-100 pointer-events-none whitespace-nowrap z-20"
-                        x-text="getNocLabel(c.noc)"></div>
-                    </div>
-
-                    <!-- Name -->
-                    <div class="flex flex-col">
-                      <span x-text="c.name" class="text-sm cursor-pointer hover:text-indigo-400 transition-colors"
-                        :class="{'font-bold text-white': c.results?.winnerLoserTie == 'W', 'text-zinc-300': c.results?.winnerLoserTie != 'W', 'italic text-zinc-600': c.code === 'TBD'}"
-                        @click="copyName(c.name)">
-                      </span>
-                      <span x-show="c.code === 'TBD'" class="text-[10px] text-zinc-600">À déterminer</span>
-                    </div>
-
-                    <span x-show="c.results?.winnerLoserTie == 'W'"
-                      class="ml-2 text-[10px] font-bold text-green-400 border border-green-400/30 px-1 rounded">WIN</span>
-                  </div>
-
-                  <!-- Score / Mark -->
-                  <div class="flex flex-col items-end gap-0.5">
-                    <div x-show="c.results?.mark" x-text="c.results?.mark"
-                      class="text-sm font-mono font-medium text-white"></div>
-                    <div x-show="c.results?.additionalMark" x-text="c.results?.additionalMark"
-                      class="text-[10px] text-zinc-500 font-mono"></div>
-                    <div x-show="c.results?.irm" x-text="c.results?.irm" class="text-[10px] text-red-400 font-bold">
-                    </div>
-                  </div>
-
-                </div>
-              </template>
-            </div>
-
+        <!-- Footer -->
+        <footer class="text-center py-8">
+          <div class="text-xs text-zinc-600">
+            JO Viewer - Version 3.1.3<br>
+            <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
+              class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
           </div>
-        </article>
-      </template>
-
-      <!-- Footer -->
-      <footer class="text-center py-8">
-        <div class="text-xs text-zinc-600">
-          JO Viewer - Version 3.1.3<br>
-          <span class="opacity-50">Created by</span> <a href="https://github.com/boherm" target="_blank"
-            class="text-zinc-500 hover:text-zinc-300 underline">boherm</a>
-        </div>
-      </footer>
+        </footer>
 
     </main>
 
@@ -495,6 +621,8 @@
           </button>
         </div>
 
+
+
         <!-- Scrollable Content -->
         <div class="overflow-y-auto p-0 flex-1">
 
@@ -573,7 +701,10 @@
         firstLoad: true,
         loading: true,
         selectedSport: 'all',
-        liveMode: false,
+        liveMode: true,
+        franceOnly: false,
+        searchQuery: '',
+        searchOpen: false,
         tick: 0,
         scrollendTimeout: null,
         currentDateObj: new Date(today),
@@ -581,7 +712,13 @@
         medalsModal: false,
         medals: [],
         medalsError: false,
-        firstLoad: true,
+
+        isToday(d) {
+          const now = new Date();
+          return d.getDate() === now.getDate() &&
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear();
+        },
 
         get currentDateDisplay() {
           return `${this.currentDateObj.getDate().toString().padStart(2, '0')}/${(this.currentDateObj.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -600,6 +737,22 @@
           return sports.sort();
         },
 
+        get datesList() {
+          const dates = [];
+          let curr = new Date(dateMin);
+          while (curr <= dateMax) {
+            dates.push({
+              iso: curr.toISOString(),
+              obj: new Date(curr),
+              dayName: (curr.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')).charAt(0).toUpperCase() + curr.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(1).replace('.', ''),
+              dayNum: curr.getDate(),
+              month: curr.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '')
+            });
+            curr.setDate(curr.getDate() + 1);
+          }
+          return dates;
+        },
+
         get filteredEvents() {
           let filtered = this.events;
 
@@ -607,11 +760,79 @@
             filtered = filtered.filter(e => e.sportName === this.selectedSport);
           }
 
-          if (this.liveMode) {
+          // LIVE Filter: Bypass if searching
+          if (this.liveMode && !this.searchQuery) {
             filtered = filtered.filter(e => ['RUNNING', 'SCHEDULED_BREAK'].includes(e.status));
           }
 
+          if (this.franceOnly) {
+            filtered = filtered.filter(e => e.hasFR);
+          }
+
+          if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(e => {
+              const matchText = (e.eventName + ' ' + e.sportName).toLowerCase();
+              if (matchText.includes(query)) return true;
+
+              return e.competitors.some(c => {
+                const nameMatch = c.name?.toLowerCase().includes(query);
+                const nocMatch = c.noc?.toLowerCase().includes(query);
+                const labelMatch = this.getNocLabel(c.noc)?.toLowerCase().includes(query);
+                return nameMatch || nocMatch || labelMatch;
+              });
+            });
+          }
+
           return filtered;
+        },
+
+        toggleLiveMode() {
+          this.liveMode = !this.liveMode;
+          if (this.liveMode) {
+            this.currentDateObj = new Date(today);
+            this.loadData();
+          }
+          window.localStorage.setItem("liveMode", this.liveMode);
+        },
+
+        toggleFranceFilter() {
+          this.franceOnly = !this.franceOnly;
+          if (this.franceOnly) this.selectedSport = 'all';
+          window.scrollTo(0, 0);
+        },
+
+        isSameDate(d) {
+          return d.getDate() === this.currentDateObj.getDate() &&
+            d.getMonth() === this.currentDateObj.getMonth();
+        },
+
+        scrollSelectedIntoView() {
+          this.$nextTick(() => {
+            const container = this.$refs.dateScroll;
+            if (!container) return;
+            const active = container.querySelector('.bg-white');
+            if (active) {
+              const elRect = active.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const scrollLeft = container.scrollLeft + (elRect.left - containerRect.left) - (containerRect.width / 2) + (elRect.width / 2);
+              container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+            }
+          });
+        },
+
+        scrollSelectedSportIntoView() {
+          this.$nextTick(() => {
+            const container = this.$refs.sportScroll;
+            if (!container) return;
+            const active = container.querySelector('.bg-indigo-600');
+            if (active) {
+              const elRect = active.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const scrollLeft = container.scrollLeft + (elRect.left - containerRect.left) - (containerRect.width / 2) + (elRect.width / 2);
+              container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+            }
+          });
         },
 
         init() {
@@ -619,11 +840,12 @@
           // Initial Load
           this.loadData().then(() => {
             this.loading = false;
+            this.scrollSelectedIntoView();
           });
 
           setInterval(() => {
             if (!this.loading) this.loadData();
-          }, 5000);
+          }, 10000);
 
           this.aboutModal = true;
           if (window.localStorage.getItem("aboutModal"))
@@ -1124,6 +1346,9 @@
 
           this.events = newEvents;
 
+          // Refresh medals too if modal might be opened
+          this.loadMedals();
+
           if (this.firstLoad) {
             this.goToTime();
             this.firstLoad = false;
@@ -1136,11 +1361,13 @@
           this.loading = true;
           this.currentDateObj = newDate;
           this.selectedSport = 'all';
+          this.liveMode = this.isToday(newDate);
 
           this.events = [];
 
           this.loadData().then(() => {
             this.loading = false;
+            this.scrollSelectedIntoView();
             setTimeout(() => {
               window.scrollTo(0, 0);
             }, 150);
@@ -1156,10 +1383,10 @@
           newDate.setHours(0, 0, 0, 0);
           newDate.setDate(newDate.getDate() + delta);
           this.changeDate(newDate);
-          this.liveMode = false;
         }
       }))
     })
   </script>
 </body>
+
 </html>
