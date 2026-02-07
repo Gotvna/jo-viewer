@@ -538,10 +538,10 @@
                       <span class="font-medium text-zinc-200 group-hover:text-white" x-text="row.description"></span>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-center font-bold text-yellow-500 bg-yellow-500/5" x-text="row.g"></td>
-                  <td class="px-4 py-3 text-center font-bold text-zinc-400 bg-zinc-400/5" x-text="row.s"></td>
-                  <td class="px-4 py-3 text-center font-bold text-orange-500 bg-orange-500/5" x-text="row.b"></td>
-                  <td class="px-4 py-3 text-center font-bold text-white" x-text="row.t"></td>
+                  <td class="px-4 py-3 text-center font-bold text-yellow-500 bg-yellow-500/5" x-text="row.g_me"></td>
+                  <td class="px-4 py-3 text-center font-bold text-zinc-400 bg-zinc-400/5" x-text="row.s_me"></td>
+                  <td class="px-4 py-3 text-center font-bold text-orange-500 bg-orange-500/5" x-text="row.b_me"></td>
+                  <td class="px-4 py-3 text-center font-bold text-white" x-text="row.t_me"></td>
                 </tr>
               </template>
             </tbody>
@@ -830,7 +830,20 @@
             if (!response.ok) throw new Error('API Error');
 
             const api = await response.json();
-            this.medals = api.medalStandings?.medalsTable || [];
+            const table = api.medalStandings?.medalsTable || [];
+
+            this.medals = table.map(item => {
+              const total = item.medalsNumber.find(x => x.type === 'Total');
+              return {
+                rank: item.rank,
+                organisation: item.organisation,
+                description: item.description,
+                g_me: total?.gold || 0,
+                s_me: total?.silver || 0,
+                b_me: total?.bronze || 0,
+                t_me: total?.total || 0
+              };
+            });
 
             if (this.medals.length === 0) {
               this.medalsError = true;
@@ -840,13 +853,6 @@
             this.medals.sort((a, b) => {
               if (a.rank !== b.rank) return a.rank - b.rank;
               return 0;
-            });
-
-            this.medals.map(d => {
-                d.g = d.medalsNumber.reduce((acc, m) => acc + m.gold, 0);
-                d.s = d.medalsNumber.reduce((acc, m) => acc + m.silver, 0);
-                d.b = d.medalsNumber.reduce((acc, m) => acc + m.bronze, 0);
-                d.t = d.medalsNumber.reduce((acc, m) => acc + m.total, 0);
             });
 
           } catch (e) {
